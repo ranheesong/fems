@@ -7,6 +7,7 @@ import InputSelect from './components/selectInput'
 import ActionToggle from './components/actionToggle'
 import ReactTable from './components/reactTable'
 import TestTable from './components/testTable'
+// import TestTable2 from './components/testTable2'
 import { MantineProvider, 
   Group,
   Box,
@@ -79,6 +80,9 @@ export default function Page() {
           </Group>
           <Group>
             <ReactTable/>
+          </Group>
+          <Group>
+            {/* <TestTable2/> */}
           </Group>
           <Group>
             <TestTable/>

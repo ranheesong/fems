@@ -1,8 +1,9 @@
 'use client'
 import * as React from 'react'
 import { useState } from 'react';
-import { Table, TextInput, Button, Group, Select, Pagination } from '@mantine/core';
+import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table'
 import { nanoid } from 'nanoid';
+import { TextInput, Button, Group, Select, Pagination } from '@mantine/core';
 
 const initialData = [
     {   id: nanoid(),
@@ -159,7 +160,7 @@ const initialData = [
 
 
 
-const TestTable = () => {
+const TestTable2 = () => {
     const [data, setData] = useState(initialData);
     const [editedRow, setEditedRow] = useState({});
     const [searchText, setSearchText] = useState('');
@@ -174,24 +175,50 @@ const TestTable = () => {
     const endIndex = startIndex + rowsPerPage;
 
     const columns = [
-        { value: 'name', title: 'Name', width: 200 },
-        { value: 'email', title: 'Email', width: 300 },
-        { value: 'company', title: 'Company', width: 200 },
         {
-            value: 'actions',
-            title: 'Actions',
-            width: 100,
-            render: (row) => (
+            accessorKey: 'name',
+            header: 'Name',
+            cell: info => editingRowId === info.row.original.id ? (
+                <TextInput
+                    value={editedRow.name}
+                    onChange={(event) => handleChange(event, 'name')}
+                />
+            ) : info.getValue(),
+        },
+        {
+            accessorKey: 'email',
+            header: 'Email',
+            cell: info => editingRowId === info.row.original.id ? (
+                <TextInput
+                    value={editedRow.email}
+                    onChange={(event) => handleChange(event, 'email')}
+                />
+            ) : info.getValue(),
+        },
+        {
+            accessorKey: 'company',
+            header: 'Company',
+            cell: info => editingRowId === info.row.original.id ? (
+                <TextInput
+                    value={editedRow.company}
+                    onChange={(event) => handleChange(event, 'company')}
+                />
+            ) : info.getValue(),
+        },
+        {
+            id: 'actions', // Important: Give the action column an ID
+            header: 'Actions',
+            Cell: ({ row }) => (
                 <Group>
-                    {editingRowId === row.id ? (
+                    {editingRowId === row.original.id ? (
                         <>
-                            <Button size="xs" color="yellow" variant="light"  onClick={() => handleSave(row.id)}>저장</Button>
-                            <Button size="xs" color="green" variant="light"  onClick={handleCancel}>취소</Button>
+                            <Button size="xs" color="yellow" variant="light" onClick={() => handleSave(row.original.id)}>저장</Button>
+                            <Button size="xs" color="green" variant="light" onClick={handleCancel}>취소</Button>
                         </>
                     ) : (
                         <>
-                            <Button size="xs" variant="light"  onClick={() => handleEditClick(row.id)}>편집</Button>
-                            <Button size="xs" color="red" variant="light"  onClick={() => handleDelete(row.id)}>삭제</Button>
+                            <Button size="xs" variant="light" onClick={() => handleEditClick(row.original.id)}>편집</Button>
+                            <Button size="xs" color="red" variant="light" onClick={() => handleDelete(row.original.id)}>삭제</Button>
                         </>
                     )}
                 </Group>
@@ -199,11 +226,10 @@ const TestTable = () => {
         },
     ];
 
-    const RowColumns = columns.filter(col => col.value !== 'actions');
 
     const filteredData = data.filter((row) => {
         if (!searchText) return true;
-    
+
         const searchTextLower = searchText.toLowerCase();
         return (
             row.name.toLowerCase().includes(searchTextLower) ||
@@ -214,6 +240,12 @@ const TestTable = () => {
 
     const paginatedData = filteredData.slice(startIndex, endIndex);
 
+    const table = useReactTable({
+        data: paginatedData,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+    });
+
     const handleEditClick = (id) => {
         setEditingRowId(id);
         setEditedRow(data.find(row => row.id === id));
@@ -221,7 +253,7 @@ const TestTable = () => {
 
     const handleSave = (id) => {
         const newData = data.map(row =>
-            row.id === id ? { ...row, ...editedRow } : row // editedRow 내용을 row에 병합
+            row.id === id ? { ...row, ...editedRow } : row
         );
         setData(newData);
         setEditingRowId(null);
@@ -235,35 +267,35 @@ const TestTable = () => {
 
     const handleChange = (event, field) => {
         if (addingNewRow) {
-            setNewRowData({ ...newRowData, [field]: event.target.value }); // newRowData 업데이트
+            setNewRowData({ ...newRowData, [field]: event.target.value });
         } else {
-            setEditedRow({ ...editedRow, [field]: event.target.value }); // editedRow 업데이트
+            setEditedRow({ ...editedRow, [field]: event.target.value });
         }
     };
 
     const handleDelete = (id) => {
         const confirmation = window.confirm('삭제하시겠습니까?');
         if (confirmation) {
-            const newData = data.filter(row => row.id !== id); // id를 사용하여 필터링
+            const newData = data.filter(row => row.id !== id);
             setData(newData);
         }
     };
 
     const handleAddRow = () => {
         setAddingNewRow(true);
-        setNewRowData({ name: '', email: '', company: '' }); 
+        setNewRowData({ name: '', email: '', company: '' });
     };
 
     const handleCancelNew = () => {
         setAddingNewRow(false);
-        setNewRowData({ name: '', email: '', company: '' }); 
+        setNewRowData({ name: '', email: '', company: '' });
     };
 
     const handleSaveNew = () => {
         const newRow = { id: nanoid(), ...newRowData };
         setData([newRow, ...data]);
         setAddingNewRow(false);
-        setNewRowData({ name: '', email: '', company: '' }); 
+        setNewRowData({ name: '', email: '', company: '' });
     };
 
     const handleSearchChange = (event) => {
@@ -274,68 +306,29 @@ const TestTable = () => {
         setSearchColumn(value);
     };
 
-    const rows = paginatedData.map((row) => (
-        <Table.Tr key={row.id}>
-            {RowColumns.map((col) => (
-                <Table.Td key={col.value}>
-                {editingRowId === row.id ? (
-                    <TextInput
-                    value={editedRow[col.value]}
-                    onChange={(event) => handleChange(event, col.value)}
-                    />
-                ) : (
-                    <div>{row[col.value]}</div>
-                )}
-                </Table.Td>
-            ))}
-            <Table.Td>
-                {editingRowId === row.id ? (
-                <Group>
-                    <Button size="xs" color="yellow" variant="light"  onClick={() => handleSave(row.id)}>
-                    저장
-                    </Button>
-                    <Button size="xs" color="green" variant="light"  onClick={handleCancel}>
-                    취소
-                    </Button>
-                </Group>
-                ) : (
-                <Group>
-                    <Button size="xs" variant="light"  onClick={() => handleEditClick(row.id)}>
-                    편집
-                    </Button>
-                    <Button size="xs" color="red" variant="light"  onClick={() => handleDelete(row.id)}>
-                    삭제
-                    </Button>
-                </Group>
-                )}
-            </Table.Td>
-        </Table.Tr>
-    ));
-
     const newRow = (
-        <Table.Tr key="new-row">
+        <tr key="new-row">
             {columns.map((col) => (
-                <Table.Td key={col.value}>
-                {addingNewRow && col.value !== 'actions' ? (
-                    <TextInput
-                        value={newRowData[col.value]}
-                        onChange={(event) => handleChange(event, col.value)}
-                    />
-                ) : (
-                    addingNewRow && col.value === 'actions' && (
-                    <Group>
-                        <Button size="xs" color="yellow" variant="light"  onClick={handleSaveNew}>
-                        저장
-                        </Button>
-                        <Button size="xs" color="green" variant="light"  onClick={handleCancelNew}>
-                        취소
-                        </Button>
-                    </Group>
-                    )
-                )}
-                </Table.Td>
+                <td key={col.accessorKey || col.id}>
+                    {addingNewRow && col.accessorKey && (
+                        <TextInput
+                            value={newRowData[col.accessorKey]}
+                            onChange={(event) => handleChange(event, col.accessorKey)}
+                        />
+                    )}
+                    {addingNewRow && col.id === 'actions' && (
+                        <Group>
+                            <Button size="xs" color="yellow" variant="light" onClick={handleSaveNew}>
+                                저장
+                            </Button>
+                            <Button size="xs" color="green" variant="light" onClick={handleCancelNew}>
+                                취소
+                            </Button>
+                        </Group>
+                    )}
+                </td>
             ))}
-        </Table.Tr>
+        </tr>
     );
 
     return (
@@ -345,26 +338,45 @@ const TestTable = () => {
                     placeholder="Search by..."
                     value={searchColumn}
                     onChange={handleSearchColumnChange}
-                    data={columns.map((col) => ({ value: col.value, label: col.title }))}
+                    data={columns.filter(c => c.accessorKey).map((col) => ({ value: col.accessorKey, label: col.header }))}
                 />
                 <TextInput placeholder="Search..." value={searchText} onChange={handleSearchChange} />
-                <Button
-                    size="sm"
-                    onClick={handleAddRow}>
-                신규</Button>
+                <Button size="sm" onClick={handleAddRow}>신규</Button>
             </Group>
-            <Table>
-                <Table.Thead>
-                <Table.Tr>
-                    {columns.map((col) => (
-                    <Table.Th key={col.id}>{col.title}</Table.Th>
+            <table>
+                <thead>
+                    {table.getHeaderGroups().map(headerGroup => (
+                        <tr key={headerGroup.id}>
+                            {headerGroup.headers.map(header => (
+                                <th key={header.id}>
+                                    {header.isPlaceholder
+                                        ? null
+                                        : flexRender(
+                                            header.column.columnDef.header,
+                                            header.getContext()
+                                        )}
+                                </th>
+                            ))}
+                        </tr>
                     ))}
-                </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>{addingNewRow && newRow}{rows}</Table.Tbody>
-            </Table>
-            <Pagination 
-                total={Math.ceil(filteredData.length / rowsPerPage)} // Calculate total pages
+                </thead>
+                <tbody>
+                    {addingNewRow && newRow}
+                    {table.getRowModel().rows.map(row => {
+                        return (
+                            <tr key={row.id}>
+                                {row.getVisibleCells().map(cell => (
+                                    <td key={cell.id}>
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </td>
+                                ))}
+                            </tr>
+                        )
+                    })}
+                </tbody>
+            </table>
+            <Pagination
+                total={Math.ceil(filteredData.length / rowsPerPage)}
                 page={activePage}
                 onChange={setActivePage}
                 mt="xl"
@@ -374,4 +386,4 @@ const TestTable = () => {
     );
 };
 
-export default TestTable;
+export default TestTable2;
