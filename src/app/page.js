@@ -5,7 +5,7 @@ import DatePicker from './components/datepickerinputs'
 import InputText from './components/textInput'
 import InputSelect from './components/selectInput'
 import ActionToggle from './components/actionToggle'
-// import ReactTable from './components/reactTable'
+import ReactTable from './components/reactTable'
 import TestTable from './components/testTable'
 // import TestTable2 from './components/testTable2'
 import { MantineProvider, 
@@ -79,7 +79,7 @@ export default function Page() {
             >삭제</MyButton>
           </Group>
           <Group>
-            {/* <ReactTable/> */}
+            <ReactTable/>
           </Group>
           <Group>
             {/* <TestTable2/> */}
