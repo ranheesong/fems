@@ -1,25 +1,38 @@
+'use client'
 import * as React from 'react'
+import { useState } from 'react';
+import { useDisclosure } from '@mantine/hooks';
 import MyButton from './components/myButton'
 import DatePicker from './components/datepickerinputs'
 // import DateTimePicker from './components/datetimepicker'
 import InputText from './components/textInput'
 import InputSelect from './components/selectInput'
 import ActionToggle from './components/actionToggle'
-import ReactTable from './components/reactTable'
+// import ReactTable from './components/reactTable'
 import TestTable from './components/testTable'
-// import TestTable2 from './components/testTable2'
+import { Modal } from '@mantine/core';;
+import Example from './components/testTable2'
 import { MantineProvider, 
   Group,
   Box,
   // createTheme, 
   } from '@mantine/core';
 import classes from './css/HeaderMenu.module.css';
+// import CustomModal from './components/modal'; // 모달 컴포넌트 import
 
 export default function Page() {
     const handleClick = (message) => {
       console.log(message); // Display alert message
     };
-    
+
+    const [opened, { open, close }] = useDisclosure(false);
+    const [modalData, setModalData] = useState({
+      title: '',
+      message: '',
+    });
+    const [inputValue1, setInputValue1] = useState('');
+    const [inputValue2, setInputValue2] = useState('');
+
     return (
         <MantineProvider defaultColorScheme="dark">
           <Box pb={120}>
@@ -79,13 +92,50 @@ export default function Page() {
             >삭제</MyButton>
           </Group>
           <Group>
-            <ReactTable/>
+            <Example />
+          </Group>
+
+          <Group justify='flex-start' gap='xs' className={classes.basicButton}>
+          <Modal
+            opened={opened}
+            onClose={close}
+            withCloseButton={false} // 닫기버튼
+            // size = "auto" // zs, sm, md, lg, xl, 55rem, 70%, 100%
+            onExitTransitionEnd={() => { 
+              setModalData({ title: '', message: '' }); 
+              setInputValue1(''); 
+              setInputValue2(''); }}
+            title={modalData.title}
+            // fullScreen
+            // overlayProps={{
+            //   backgroundOpacity: 0.55,
+            //   blur: 3,
+            // }} //뒷단 블러처리
+            centered
+          >
+            {modalData.message}
+            <InputText 
+              label="First input" 
+              placeholder="First input"
+              value={inputValue1} 
+              onChange={(event) => setInputValue1(event.target.value)}  
+            />
+            <InputText
+              data-autofocus
+              label="Input with initial focus"
+              placeholder="It has data-autofocus attribute"
+              mt="md"
+              value={inputValue2} 
+              onChange={(event) => setInputValue2(event.target.value)} 
+            />
+            <Group justify='flex-end'>
+            <MyButton variant="light" onClick={() => close()}>닫기</MyButton>
+            </Group>
+          </Modal>
+          <MyButton variant="light" onClick={() => {open(); setModalData({ title: 'test Modal', message: 'test message' });}}>모달 테스트</MyButton>
           </Group>
           <Group>
-            {/* <TestTable2/> */}
-          </Group>
-          <Group>
-            <TestTable/>
+            {/* <TestTable/> */}
           </Group>
         </Box>
       </MantineProvider>

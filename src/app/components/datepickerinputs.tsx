@@ -20,7 +20,7 @@ export default function DatePicker(props) {
                 // dropdownType="popover/modal"
                 // label="Pick date"
                 // placeholder="Pick date"
-                valueFormat="YYYY MM DD"
+                valueFormat="YYYY-MM-DD"
                 value={value}
                 onChange={setValue}
                 {...(props)} 
