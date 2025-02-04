@@ -87,11 +87,22 @@ const Example = () => {
       {
         accessorKey: 'firstName',
         header: 'First Name',
-        Cell: ({ cell }) => (
-          <Tooltip label={cell.getValue()} withArrow>
-            <DatePicker></DatePicker>
-          </Tooltip>
-          ),
+        mantineEditTextInputProps: ({ cell, row }) => ({
+            type: 'email',
+            required: true,
+            error: validationErrors?.[cell.id],
+            //store edited user in state to be saved later
+            onBlur: (event) => {
+              const validationError = !validateRequired(event.currentTarget.value)
+                ? 'Required'
+                : undefined;
+              setValidationErrors({
+                ...validationErrors,
+                [cell.id]: validationError,
+              });
+              setEditedUsers({ ...editedUsers, [row.id]: row.original });
+            },
+          }),
       },
       {
         accessorKey: 'lastName',
@@ -101,7 +112,7 @@ const Example = () => {
             value={moment(cell.getValue())}
             valueFormat="YYYY-MM-DD"
             preserveTime={false}
-            label="Date input"
+            // label="Date input"
             placeholder="Date input"
             maw={400}
             mx="auto"
