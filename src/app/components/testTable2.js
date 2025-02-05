@@ -105,29 +105,9 @@ const Example = () => {
                 },
             }),
         },
-        // {
-        //     accessorKey: 'lastName',
-        //     header: 'Last Name',
-        //     Cell: ({ cell }) => (
-                
-        //         <DatesProvider settings={{ consistentWeeks: true, locale: 'ko'}}>
-        //             <DatePickerInput
-        //                 valueFormat="YYYY-MM-DD"
-        //                 // preserveTime={false}
-        //                 // label="Date input"
-        //                 placeholder="Date input"
-        //                 maw={400}
-        //                 mx="auto"
-        //                 // value={value}
-        //                 value={moment(cell.getValue())}
-        //                 onChange={moment(cell.row.original.lastName)}
-        //             />
-        //         </DatesProvider>
-        //         ),
-        // },
         {
             accessorKey: 'lastName',
-            header: 'Last Name',
+            header: 'Last Date',
             Cell: ({ cell }) => {
                 const [dateValue, setDateValue] = useState(
                     editedUsers[cell.row.id]?.lastName
@@ -146,6 +126,7 @@ const Example = () => {
                             placeholder="Date input"
                             maw={400}
                             mx="auto"
+                            variant="unstyled"
                             value={dateValue}
                             onChange={(date) => {
                                 setDateValue(date);
@@ -377,7 +358,7 @@ function validateUser(user) {
         firstName: !validateRequired(user.firstName)
         ? 'First Name is Required'
         : '',
-        lastName: !validateRequired(user.lastName) ? 'Last Name is Required' : '',
+        lastName: !validateRequired(user.lastName) ? 'Last Date is Required' : '',
         email: !validateEmail(user.email) ? 'Incorrect Email Format' : '',
     };
 }
