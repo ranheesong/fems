@@ -21,7 +21,7 @@ import { usStates } from '../../components/makeData';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ModalsProvider } from '@mantine/modals';
 // import { DatePickerInput, DatesProvider} from '@mantine/dates';
-import 'dayjs/locale/ko';
+// import 'dayjs/locale/ko';
 // import moment from 'moment';
 // import { IconCalendar } from '@tabler/icons-react';
 
@@ -57,40 +57,15 @@ const columnsConfig = [
     options: usStates, // Select options
   },
   {
-    key: 'lastDate', // 새로운 날짜 컬럼 추가
-    header: 'Last Date',
-    // Cell: ({ cell }) => {
-    //   const [dateValue, setDateValue] = useState(
-    //     cell.row.original.lastDate ? moment(cell.row.original.lastDate) : null // original data 사용
-    //   );
-
-    //   return (
-    //     <DatesProvider settings={{ consistentWeeks: true, locale: 'ko' }}>
-    //       <DatePickerInput
-    //         rightSection={<IconCalendar size={18} stroke={1.5} />}
-    //         rightSectionPointerEvents="none"
-    //         valueFormat="YYYY-MM-DD"
-    //         placeholder="Date input"
-    //         maw={400}
-    //         mx="auto"
-    //         variant="unstyled"
-    //         value={dateValue}
-    //         onChange={(date) => {
-    //           setDateValue(date);
-    //           // CustomTable 컴포넌트의 onUpdate 함수를 호출하여 부모 컴포넌트의 state를 업데이트합니다.
-    //           if (cell.row.original) { // original이 있을때만 update 실행
-    //             const updatedRow = { ...cell.row.original, lastDate: date ? date.format('YYYY-MM-DD') : null }; // YYYY-MM-DD 형식으로 저장
-    //             onUpdate(updatedRow); // lastDate를 포함한 전체 row data를 update
-    //           }
-
-    //         }}
-    //       />
-    //     </DatesProvider>
-    //   );
-    // },
-    inputType: 'date', // inputType을 date로 지정하면 DatePicker가 자동으로 렌더링 됩니다.
-    // editVariant: 'date', // editVariant를 date로 지정해야 edit 모드에서도 DatePicker가 나타납니다.
+    key: 'checked',
+    header: 'Checked',
+    inputType: 'checkbox',
   },
+  // {
+  //   key: 'date',
+  //   header: 'Date',
+  //   inputType: 'date',
+  // },
 ];
 
 export default function Page() {

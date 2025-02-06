@@ -1,389 +1,383 @@
 'use client'
 import * as React from 'react'
-import { useState } from 'react';
-import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table'
-import { nanoid } from 'nanoid';
-import { TextInput, Button, Group, Select, Pagination } from '@mantine/core';
+import { useState, useMemo } from 'react';
+import {
+    MantineReactTable,
+    // createRow,
+    useMantineReactTable,
+} from 'mantine-react-table';
+import { ActionIcon, Button, Flex, Text, Tooltip } from '@mantine/core';
+import { ModalsProvider, modals } from '@mantine/modals';
+import { IconTrash, IconCalendar } from '@tabler/icons-react';
+import {
+    QueryClient,
+    QueryClientProvider,
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/react-query';
+import { fakeData, usStates } from './makeData';
+import { DatePickerInput, DatesProvider} from '@mantine/dates';
+import 'dayjs/locale/ko';
 
-const initialData = [
-    {   id: nanoid(),
-        name: 'Athena Weissnat',
-        company: 'Little - Rippin',
-        email: 'Elouise.Prohaska@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Deangelo Runolfsson',
-        company: 'Greenfelder - Krajcik',
-        email: 'Kadin_Trantow87@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Danny Carter',
-        company: 'Kohler and Sons',
-        email: 'Marina3@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Trace Tremblay PhD',
-        company: 'Crona, Aufderhar and Senger',
-        email: 'Antonina.Pouros@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Derek Dibbert',
-        company: 'Gottlieb LLC',
-        email: 'Abagail29@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Viola Bernhard',
-        company: 'Funk, Rohan and Kreiger',
-        email: 'Jamie23@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Austin Jacobi',
-        company: 'Botsford - Corwin',
-        email: 'Genesis42@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Hershel Mosciski',
-        company: 'Okuneva, Farrell and Kilback',
-        email: 'Idella.Stehr28@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Mylene Ebert',
-        company: 'Kirlin and Sons',
-        email: 'Hildegard17@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Lou Trantow',
-        company: 'Parisian - Lemke',
-        email: 'Hillard.Barrows1@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Dariana Weimann',
-        company: 'Schowalter - Donnelly',
-        email: 'Colleen80@gmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Dr. Christy Herman',
-        company: 'VonRueden - Labadie',
-        email: 'Lilyan98@gmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Katelin Schuster',
-        company: 'Jacobson - Smitham',
-        email: 'Erich_Brekke76@gmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Melyna Macejkovic',
-        company: 'Schuster LLC',
-        email: 'Kylee4@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Pinkie Rice',
-        company: 'Wolf, Trantow and Zulauf',
-        email: 'Fiona.Kutch@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Brain Kreiger',
-        company: 'Lueilwitz Group',
-        email: 'Rico98@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Myrtice McGlynn',
-        company: 'Feest, Beahan and Johnston',
-        email: 'Julius_Tremblay29@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Chester Carter PhD',
-        company: 'Gaylord - Labadie',
-        email: 'Jensen_McKenzie@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Mrs. Ericka Bahringer',
-        company: 'Conn and Sons',
-        email: 'Lisandro56@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Korbin Buckridge Sr.',
-        company: 'Mraz, Rolfson and Predovic',
-        email: 'Leatha9@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Dr. Daisy Becker',
-        company: 'Carter - Mueller',
-        email: 'Keaton_Sanford27@gmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Derrick Buckridge Sr.',
-        company: "O'Reilly LLC",
-        email: 'Kay83@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Ernie Hickle',
-        company: "Terry, O'Reilly and Farrell",
-        email: 'Americo.Leffler89@gmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Jewell Littel',
-        company: "O'Connell Group",
-        email: 'Hester.Hettinger9@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Cyrus Howell',
-        company: 'Windler, Yost and Fadel',
-        email: 'Rick0@gmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Dr. Orie Jast',
-        company: 'Hilll - Pacocha',
-        email: 'Anna56@hotmail.com',
-    },
-    {   id: nanoid(),
-        name: 'Luisa Murphy',
-        company: 'Turner and Sons',
-        email: 'Christine32@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Lea Witting',
-        company: 'Hodkiewicz Inc',
-        email: 'Ford_Kovacek4@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Kelli Runolfsson',
-        company: "Feest - O'Hara",
-        email: 'Dimitri87@yahoo.com',
-    },
-    {   id: nanoid(),
-        name: 'Brook Gaylord',
-        company: 'Conn, Huel and Nader',
-        email: 'Immanuel77@gmail.com',
-    },
-];
+import moment from 'moment';
+const Example = () => {
+    const [validationErrors, setValidationErrors] = useState({});
+    const [editedUsers, setEditedUsers] = useState({});
 
+    //call CREATE hook
+    const { mutateAsync: createUser, isLoading: isCreatingUser } =
+        useCreateUser();
+    //call READ hook
+    const {
+        data: fetchedUsers = [],
+        isError: isLoadingUsersError,
+        isFetching: isFetchingUsers,
+        isLoading: isLoadingUsers,
+    } = useGetUsers();
+    //call UPDATE hook
+    const { mutateAsync: updateUsers, isLoading: isUpdatingUser } =
+        useUpdateUsers();
+    //call DELETE hook
+    const { mutateAsync: deleteUser, isLoading: isDeletingUser } =
+        useDeleteUser();
 
+  //CREATE action
+    const handleCreateUser = async ({ values, exitCreatingMode }) => {
+        const newValidationErrors = validateUser(values);
+        if (Object.values(newValidationErrors).some((error) => !!error)) {
+        setValidationErrors(newValidationErrors);
+        return;
+        }
+        setValidationErrors({});
+        await createUser(values);
+        exitCreatingMode();
+    };
 
-const TestTable2 = () => {
-    const [data, setData] = useState(initialData);
-    const [editedRow, setEditedRow] = useState({});
-    const [searchText, setSearchText] = useState('');
-    const [searchColumn, setSearchColumn] = useState('');
-    const [editingRowId, setEditingRowId] = useState(null);
-    const [addingNewRow, setAddingNewRow] = useState(false);
-    const [newRowData, setNewRowData] = useState({ name: '', email: '', company: '' });
-    const [activePage, setActivePage] = useState(1);
-    const rowsPerPage = 5;
+    //UPDATE action
+    const handleSaveUsers = async () => {
+        if (Object.values(validationErrors).some((error) => !!error)) return;
+        await updateUsers(Object.values(editedUsers));
+        setEditedUsers({});
+    };
 
-    const startIndex = (activePage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
+    //DELETE action
+    const openDeleteConfirmModal = (row) =>
+        modals.openConfirmModal({
+        title: 'Are you sure you want to delete this user?',
+        children: (
+            <Text>
+            Are you sure you want to delete {row.original.firstName}{' '}
+            {row.original.lastName}? This action cannot be undone.
+            </Text>
+        ),
+        labels: { confirm: 'Delete', cancel: 'Cancel' },
+        confirmProps: { color: 'red' },
+        onConfirm: () => deleteUser(row.original.id),
+        });
 
-    const columns = [
+    // const [value, setValue] = useState<Date | null>(null);
+    const columns = useMemo(
+        () => [
         {
-            accessorKey: 'name',
-            header: 'Name',
-            cell: info => editingRowId === info.row.original.id ? (
-                <TextInput
-                    value={editedRow.name}
-                    onChange={(event) => handleChange(event, 'name')}
-                />
-            ) : info.getValue(),
+            accessorKey: 'id',
+            header: 'Id',
+            enableEditing: false,
+            size: 80,
+        },
+        {
+            accessorKey: 'firstName',
+            header: 'First Name',
+            mantineEditTextInputProps: ({ cell, row }) => ({
+                type: 'email',
+                required: true,
+                error: validationErrors?.[cell.id],
+                //store edited user in state to be saved later
+                onBlur: (event) => {
+                const validationError = !validateRequired(event.currentTarget.value)
+                    ? 'Required'
+                    : undefined;
+                setValidationErrors({
+                    ...validationErrors,
+                    [cell.id]: validationError,
+                });
+                setEditedUsers({ ...editedUsers, [row.id]: row.original });
+                },
+            }),
+        },
+        // {
+        //     accessorKey: 'lastName',
+        //     header: 'Last Name',
+        //     Cell: ({ cell }) => (
+                
+        //         <DatesProvider settings={{ consistentWeeks: true, locale: 'ko'}}>
+        //             <DatePickerInput
+        //                 valueFormat="YYYY-MM-DD"
+        //                 // preserveTime={false}
+        //                 // label="Date input"
+        //                 placeholder="Date input"
+        //                 maw={400}
+        //                 mx="auto"
+        //                 // value={value}
+        //                 value={moment(cell.getValue())}
+        //                 onChange={moment(cell.row.original.lastName)}
+        //             />
+        //         </DatesProvider>
+        //         ),
+        // },
+        {
+            accessorKey: 'lastName',
+            header: 'Last Name',
+            Cell: ({ cell }) => {
+                const [dateValue, setDateValue] = useState(
+                    editedUsers[cell.row.id]?.lastName
+                        ? moment(editedUsers[cell.row.id].lastName)
+                        : cell.row.original.lastName
+                        ? moment(cell.row.original.lastName)
+                        : null
+                );
+
+                return (
+                    <DatesProvider settings={{ consistentWeeks: true, locale: 'ko' }}>
+                        <DatePickerInput
+                        rightSection={<IconCalendar size={18} stroke={1.5} />}
+                        rightSectionPointerEvents="none"
+                            valueFormat="YYYY-MM-DD"
+                            placeholder="Date input"
+                            maw={400}
+                            mx="auto"
+                            value={dateValue}
+                            onChange={(date) => {
+                                setDateValue(date);
+                                setEditedUsers({
+                                    ...editedUsers,
+                                    [cell.row.id]: {
+                                        ...cell.row.original,
+                                        lastName: date ? date : null,
+                                    },
+                                });
+                            }}
+                        />
+                    </DatesProvider>
+                );
+            },
         },
         {
             accessorKey: 'email',
             header: 'Email',
-            cell: info => editingRowId === info.row.original.id ? (
-                <TextInput
-                    value={editedRow.email}
-                    onChange={(event) => handleChange(event, 'email')}
-                />
-            ) : info.getValue(),
+            mantineEditTextInputProps: ({ cell, row }) => ({
+            type: 'email',
+            required: true,
+            error: validationErrors?.[cell.id],
+            //store edited user in state to be saved later
+            onBlur: (event) => {
+                const validationError = !validateEmail(event.currentTarget.value)
+                ? 'Invalid Email'
+                : undefined;
+                setValidationErrors({
+                ...validationErrors,
+                [cell.id]: validationError,
+                });
+                setEditedUsers({ ...editedUsers, [row.id]: row.original });
+            },
+            }),
         },
         {
-            accessorKey: 'company',
-            header: 'Company',
-            cell: info => editingRowId === info.row.original.id ? (
-                <TextInput
-                    value={editedRow.company}
-                    onChange={(event) => handleChange(event, 'company')}
-                />
-            ) : info.getValue(),
+            accessorKey: 'state',
+            header: 'State',
+            editVariant: 'select',
+            mantineEditSelectProps: ({ row }) => ({
+            data: usStates,
+            //store edited user in state to be saved later
+            onChange: (value) =>
+                setEditedUsers({
+                ...editedUsers,
+                [row.id]: { ...row.original, state: value },
+                }),
+            }),
         },
-        {
-            id: 'actions', // Important: Give the action column an ID
-            header: 'Actions',
-            Cell: ({ row }) => (
-                <Group>
-                    {editingRowId === row.original.id ? (
-                        <>
-                            <Button size="xs" color="yellow" variant="light" onClick={() => handleSave(row.original.id)}>저장</Button>
-                            <Button size="xs" color="green" variant="light" onClick={handleCancel}>취소</Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button size="xs" variant="light" onClick={() => handleEditClick(row.original.id)}>편집</Button>
-                            <Button size="xs" color="red" variant="light" onClick={() => handleDelete(row.original.id)}>삭제</Button>
-                        </>
-                    )}
-                </Group>
-            ),
-        },
-    ];
+        ],
+        [editedUsers, validationErrors],
+    );
 
-
-    const filteredData = data.filter((row) => {
-        if (!searchText) return true;
-
-        const searchTextLower = searchText.toLowerCase();
-        return (
-            row.name.toLowerCase().includes(searchTextLower) ||
-            row.company.toLowerCase().includes(searchTextLower) ||
-            row.email.toLowerCase().includes(searchTextLower)
-        );
-    });
-
-    const paginatedData = filteredData.slice(startIndex, endIndex);
-
-    const table = useReactTable({
-        data: paginatedData,
+    const table = useMantineReactTable({
         columns,
-        getCoreRowModel: getCoreRowModel(),
+        data: fetchedUsers,
+        createDisplayMode: 'row', // ('modal', and 'custom' are also available)
+        editDisplayMode: 'cell', // ('modal', 'row', 'cell', and 'custom' are also available)
+        enableEditing: true,
+        enableRowActions: true,
+        positionActionsColumn: 'last',
+        getRowId: (row) => row.id,
+        mantineToolbarAlertBannerProps: isLoadingUsersError
+        ? {
+            color: 'red',
+            children: 'Error loading data',
+            }
+        : undefined,
+        mantineTableContainerProps: {
+        sx: {
+            minHeight: '500px',
+        },
+        },
+        onCreatingRowCancel: () => setValidationErrors({}),
+        onCreatingRowSave: handleCreateUser,
+        renderRowActions: ({ row }) => (
+        <Tooltip label="Delete">
+            <ActionIcon color="red" onClick={() => openDeleteConfirmModal(row)}>
+            <IconTrash />
+            </ActionIcon>
+        </Tooltip>
+        ),
+        renderBottomToolbarCustomActions: () => (
+        <Flex align="center" gap="md">
+            <Button
+            color="blue"
+            onClick={handleSaveUsers}
+            disabled={
+                Object.keys(editedUsers).length === 0 ||
+                Object.values(validationErrors).some((error) => !!error)
+            }
+            loading={isUpdatingUser}
+            >
+            저장
+            </Button>
+            {Object.values(validationErrors).some((error) => !!error) && (
+            <Text color="red">Fix errors before submitting</Text>
+            )}
+        </Flex>
+        ),
+        renderTopToolbarCustomActions: ({ table }) => (
+        <Button
+            onClick={() => {
+            table.setCreatingRow(true); //simplest way to open the create row modal with no default values
+            //or you can pass in a row object to set default values with the `createRow` helper function
+            // table.setCreatingRow(
+            //   createRow(table, {
+            //     //optionally pass in default values for the new row, useful for nested data or other complex scenarios
+            //   }),
+            // );
+            }}
+        >
+            신규
+        </Button>
+        ),
+        state: {
+        isLoading: isLoadingUsers,
+        isSaving: isCreatingUser || isUpdatingUser || isDeletingUser,
+        showAlertBanner: isLoadingUsersError,
+        showProgressBars: isFetchingUsers,
+        },
     });
 
-    const handleEditClick = (id) => {
-        setEditingRowId(id);
-        setEditedRow(data.find(row => row.id === id));
+    return <MantineReactTable table={table} />;
     };
 
-    const handleSave = (id) => {
-        const newData = data.map(row =>
-            row.id === id ? { ...row, ...editedRow } : row
-        );
-        setData(newData);
-        setEditingRowId(null);
-        setEditedRow(null);
+    //CREATE hook (post new user to api)
+    function useCreateUser() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (user) => {
+        //send api update request here
+        await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
+        return Promise.resolve();
+        },
+        //client side optimistic update
+        onMutate: (newUserInfo) => {
+        queryClient.setQueryData(['users'], (prevUsers) => [
+            ...prevUsers,
+            {
+            ...newUserInfo,
+            id: (Math.random() + 1).toString(36).substring(7),
+            },
+        ]);
+        },
+        // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
+    });
     }
 
-    const handleCancel = () => {
-        setEditingRowId(null);
-        setEditedRow(null);
-    };
+    //READ hook (get users from api)
+    function useGetUsers() {
+    return useQuery({
+        queryKey: ['users'],
+        queryFn: async () => {
+        //send api request here
+        await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
+        return Promise.resolve(fakeData);
+        },
+        refetchOnWindowFocus: false,
+    });
+    }
 
-    const handleChange = (event, field) => {
-        if (addingNewRow) {
-            setNewRowData({ ...newRowData, [field]: event.target.value });
-        } else {
-            setEditedRow({ ...editedRow, [field]: event.target.value });
-        }
-    };
+    //UPDATE hook (put users in api)
+    function useUpdateUsers() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (users) => {
+        //send api update request here
+        await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
+        return Promise.resolve();
+        },
+        //client side optimistic update
+        onMutate: (newUsers) => {
+        queryClient.setQueryData(['users'], (prevUsers) =>
+            prevUsers?.map((user) => {
+            const newUser = newUsers.find((u) => u.id === user.id);
+            return newUser ? newUser : user;
+            }),
+        );
+        },
+        // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
+    });
+    }
 
-    const handleDelete = (id) => {
-        const confirmation = window.confirm('삭제하시겠습니까?');
-        if (confirmation) {
-            const newData = data.filter(row => row.id !== id);
-            setData(newData);
-        }
-    };
+    //DELETE hook (delete user in api)
+    function useDeleteUser() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (userId) => {
+        //send api update request here
+        await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
+        return Promise.resolve();
+        },
+        //client side optimistic update
+        onMutate: (userId) => {
+        queryClient.setQueryData(['users'], (prevUsers) =>
+            prevUsers?.filter((user) => user.id !== userId),
+        );
+        },
+        // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
+    });
+    }
 
-    const handleAddRow = () => {
-        setAddingNewRow(true);
-        setNewRowData({ name: '', email: '', company: '' });
-    };
+    const queryClient = new QueryClient();
 
-    const handleCancelNew = () => {
-        setAddingNewRow(false);
-        setNewRowData({ name: '', email: '', company: '' });
-    };
-
-    const handleSaveNew = () => {
-        const newRow = { id: nanoid(), ...newRowData };
-        setData([newRow, ...data]);
-        setAddingNewRow(false);
-        setNewRowData({ name: '', email: '', company: '' });
-    };
-
-    const handleSearchChange = (event) => {
-        setSearchText(event.target.value);
-    };
-
-    const handleSearchColumnChange = (value) => {
-        setSearchColumn(value);
-    };
-
-    const newRow = (
-        <tr key="new-row">
-            {columns.map((col) => (
-                <td key={col.accessorKey || col.id}>
-                    {addingNewRow && col.accessorKey && (
-                        <TextInput
-                            value={newRowData[col.accessorKey]}
-                            onChange={(event) => handleChange(event, col.accessorKey)}
-                        />
-                    )}
-                    {addingNewRow && col.id === 'actions' && (
-                        <Group>
-                            <Button size="xs" color="yellow" variant="light" onClick={handleSaveNew}>
-                                저장
-                            </Button>
-                            <Button size="xs" color="green" variant="light" onClick={handleCancelNew}>
-                                취소
-                            </Button>
-                        </Group>
-                    )}
-                </td>
-            ))}
-        </tr>
+    const ExampleWithProviders = () => (
+    //Put this with your other react-query providers near root of your app
+    <QueryClientProvider client={queryClient}>
+        <ModalsProvider>
+        <Example />
+        </ModalsProvider>
+    </QueryClientProvider>
     );
 
-    return (
-        <div>
-            <Group style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Select
-                    placeholder="Search by..."
-                    value={searchColumn}
-                    onChange={handleSearchColumnChange}
-                    data={columns.filter(c => c.accessorKey).map((col) => ({ value: col.accessorKey, label: col.header }))}
-                />
-                <TextInput placeholder="Search..." value={searchText} onChange={handleSearchChange} />
-                <Button size="sm" onClick={handleAddRow}>신규</Button>
-            </Group>
-            <table>
-                <thead>
-                    {table.getHeaderGroups().map(headerGroup => (
-                        <tr key={headerGroup.id}>
-                            {headerGroup.headers.map(header => (
-                                <th key={header.id}>
-                                    {header.isPlaceholder
-                                        ? null
-                                        : flexRender(
-                                            header.column.columnDef.header,
-                                            header.getContext()
-                                        )}
-                                </th>
-                            ))}
-                        </tr>
-                    ))}
-                </thead>
-                <tbody>
-                    {addingNewRow && newRow}
-                    {table.getRowModel().rows.map(row => {
-                        return (
-                            <tr key={row.id}>
-                                {row.getVisibleCells().map(cell => (
-                                    <td key={cell.id}>
-                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                    </td>
-                                ))}
-                            </tr>
-                        )
-                    })}
-                </tbody>
-            </table>
-            <Pagination
-                total={Math.ceil(filteredData.length / rowsPerPage)}
-                page={activePage}
-                onChange={setActivePage}
-                mt="xl"
-                style={{ display: 'flex', justifyContent: 'center' }}
-            />
-        </div>
-    );
-};
+    export default ExampleWithProviders;
 
-export default TestTable2;
+const validateRequired = (value) => !!value?.length;
+const validateEmail = (email) =>
+!!email.length &&
+email
+    .toLowerCase()
+    .match(
+    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+    );
+
+function validateUser(user) {
+    return {
+        firstName: !validateRequired(user.firstName)
+        ? 'First Name is Required'
+        : '',
+        lastName: !validateRequired(user.lastName) ? 'Last Name is Required' : '',
+        email: !validateEmail(user.email) ? 'Incorrect Email Format' : '',
+    };
+}

@@ -22,90 +22,20 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { fakeData } from './makeData';
+import { Checkbox } from '@mantine/core';
+// import { DatePickerInput, DatesProvider} from '@mantine/dates';
+// import 'dayjs/locale/ko';
+// import moment from 'moment';
+// import { IconCalendar } from '@tabler/icons-react';
 
 
 const CustomTable = (props) => {
   const [validationErrors, setValidationErrors] = useState({});
-
-  console.log(props)
-
-//   const columns = useMemo(
-//     () => [
-//       {
-//         accessorKey: 'id',
-//         header: 'Id',
-//         enableEditing: false,
-//         size: 80,
-//       },
-//       {
-//         accessorKey: 'firstName',
-//         header: 'First Name',
-//         mantineEditTextInputProps: {
-//           type: 'email',
-//           required: true,
-//           error: validationErrors?.firstName,
-//           //remove any previous validation errors when user focuses on the input
-//           onFocus: () =>
-//             setValidationErrors({
-//               ...validationErrors,
-//               firstName: undefined,
-//             }),
-//           //optionally add validation checking for onBlur or onChange
-//         },
-//         renderCreate: true,
-//         renderEdit: true
-//       },
-//       {
-//         accessorKey: 'lastName',
-//         header: 'Last Name',
-//         mantineEditTextInputProps: {
-//           type: 'email',
-//           required: true,
-//           error: validationErrors?.lastName,
-//           //remove any previous validation errors when user focuses on the input
-//           onFocus: () =>
-//             setValidationErrors({
-//               ...validationErrors,
-//               lastName: undefined,
-//             }),
-//         },
-//         renderCreate: true,
-//         renderEdit: false      
-//     },
-//       {
-//         accessorKey: 'email',
-//         header: 'Email',
-//         mantineEditTextInputProps: {
-//           type: 'email',
-//           required: true,
-//           error: validationErrors?.email,
-//           //remove any previous validation errors when user focuses on the input
-//           onFocus: () =>
-//             setValidationErrors({
-//               ...validationErrors,
-//               email: undefined,
-//             }),
-//         },
-//         renderCreate: false,
-//         renderEdit: true
-//       },
-//       {
-//         accessorKey: 'state',
-//         header: 'State',
-//         editVariant: 'select',
-//         mantineEditSelectProps: {
-//           data: usStates,
-//           error: validationErrors?.state,
-//         },
-//         renderCreate: true,
-//         renderEdit: true
-//       },
-//     ],
-//     [validationErrors],
-//   );
+  const [data, setData] = useState(props.data || fakeData)
+  // const [editedUsers, setEditedUsers] = useState({});
 
 const columns = useMemo(() => {
-    console.log(props)
+    // console.log(props)
     return props.columns.map((col) => {
         const columnDefinition = {
             accessorKey: col.key,
@@ -119,30 +49,68 @@ const columns = useMemo(() => {
 
         if (col.inputType) {
             const inputProps = {
-            type: col.inputType,
-            error: validationErrors?.[col.key],
-            onFocus: () =>
+              type: col.inputType,
+              error: validationErrors?.[col.key],
+              onFocus: () =>
                 setValidationErrors({
                 ...validationErrors,
                 [col.key]: undefined,
-                }),
+              }),
             };
 
-            if (col.inputType === 'select') {
+              if (col.inputType === 'select') {
               columnDefinition.editVariant = 'select';
               columnDefinition.mantineEditSelectProps = {
                   data: col.options,
                   error: validationErrors?.[col.key],
               };
-            } else if (col.inputType === 'date') { // date input type 처리
-              columnDefinition.editVariant = 'date'; // editVariant를 date로 설정
-              columnDefinition.mantineEditDatePickerProps = { // DatePicker에 필요한 props
-                valueFormat: "YYYY-MM-DD",
-                // onChange: (date) => {
-                //   // 날짜 변경 처리 로직 (필요에 따라 구현)
-                // }
-              };
-            } else {
+            } else if (col.inputType === 'checkbox') { // 수정
+              columnDefinition.accessorFn = (row) => row.checked || false;
+              columnDefinition.Cell = ({ cell }) => (
+                  <Checkbox
+                    checked={cell.getValue()}
+                    onChange={(event) => {
+                    }}
+                  />
+              );
+            } 
+            // else if (col.inputType === 'date') { // 수정
+            //   columnDefinition.editVariant = 'date';
+            //   columnDefinition.Cell = ({ cell }) => {
+            //     const [dateValue, setDateValue] = useState(
+            //         editedUsers[cell.row.id]?.lastName
+            //             ? moment(editedUsers[cell.row.id].lastName)
+            //             : cell.row.original.lastName
+            //             ? moment(cell.row.original.lastName)
+            //             : null
+            //     );
+
+            //     return (
+            //         <DatesProvider settings={{ consistentWeeks: true, locale: 'ko' }}>
+            //             <DatePickerInput
+            //             rightSection={<IconCalendar size={18} stroke={1.5} />}
+            //             rightSectionPointerEvents="none"
+            //                 valueFormat="YYYY-MM-DD"
+            //                 placeholder="Date input"
+            //                 maw={400}
+            //                 mx="auto"
+            //                 value={dateValue}
+            //                 onChange={(date) => {
+            //                     setDateValue(date);
+            //                     setEditedUsers({
+            //                         ...editedUsers,
+            //                         [cell.row.id]: {
+            //                             ...cell.row.original,
+            //                             lastName: date ? date : null,
+            //                         },
+            //                     });
+            //                 }}
+            //             />
+            //         </DatesProvider>
+            //     );
+            //   }
+            // } 
+            else {
               columnDefinition.mantineEditTextInputProps = inputProps;
             }
         }
@@ -153,7 +121,7 @@ const columns = useMemo(() => {
 
           return columnDefinition;
         });
-    }, [props.columns, validationErrors]);
+    }, [props.columns, validationErrors, data]);
 
   //call CREATE hook
   const { mutateAsync: createUser, isLoading: isCreatingUser } =
@@ -174,11 +142,7 @@ const columns = useMemo(() => {
 
   //CREATE action
   const handleCreateUser = async ({ values, exitCreatingMode }) => {
-    const newValidationErrors = validateUser(values);
-    if (Object.values(newValidationErrors).some((error) => error)) {
-      setValidationErrors(newValidationErrors);
-      return;
-    }
+    console.log('handleCreateUser',values)
     setValidationErrors({});
     await createUser(values);
     exitCreatingMode();
@@ -186,11 +150,7 @@ const columns = useMemo(() => {
 
   //UPDATE action
   const handleSaveUser = async ({ values, table }) => {
-    const newValidationErrors = validateUser(values);
-    if (Object.values(newValidationErrors).some((error) => error)) {
-      setValidationErrors(newValidationErrors);
-      return;
-    }
+    console.log('handleSaveUser',values)
     setValidationErrors({});
     await updateUser(values);
     table.setEditingRow(null); //exit editing mode
@@ -202,8 +162,7 @@ const columns = useMemo(() => {
       title: '삭제하시겠습니까?',
       children: (
         <Text>
-          Are you sure you want to delete {row.original.firstName}{' '}
-          {row.original.lastName}? This action cannot be undone.
+          Id : {row.original.id} 데이터를 삭제 하시겠습니까?
         </Text>
       ),
       labels: { confirm: '삭제', cancel: '취소' },
@@ -216,8 +175,8 @@ const columns = useMemo(() => {
     columns,
     // columns: props.columns, // 예시
     data: fetchedUsers,
-    createDisplayMode: 'modal', //default ('row', and 'custom' are also available)
-    editDisplayMode: 'modal', //default ('row', 'cell', 'table', and 'custom' are also available)
+    createDisplayMode: 'modal',
+    editDisplayMode: 'modal',
     enableEditing: true,
     getRowId: (row) => row.id,
     mantineToolbarAlertBannerProps: isLoadingUsersError
@@ -234,34 +193,27 @@ const columns = useMemo(() => {
     onCreatingRowCancel: () => setValidationErrors({}),
     // onCreatingRowSave: handleCreateUser,
     // onCreatingRowSave: props.onCreate, // 예시
-    onCreatingRowSave: (values, mode) => {
-        const newValidationErrors = validateUser(values);
-        if (Object.values(newValidationErrors).some((error) => error)) {
-            setValidationErrors(newValidationErrors);
-            return;
-        }
+    onCreatingRowSave: (values) => {
+      console.log('Creatingvalues, mode',  values.values)
         setValidationErrors({});
-        props.onCreate(values, mode);
-        mode.exitCreatingMode()
+        props.onCreate( values.values, table);
+        table.setCreatingRow(null);
     },
     onEditingRowCancel: () => setValidationErrors({}),
     // onEditingRowSave: handleSaveUser,
-    onEditingRowSave: (values, table) => {
-        const newValidationErrors = validateUser(values);
-        if (Object.values(newValidationErrors).some((error) => error)) {
-            setValidationErrors(newValidationErrors);
-            return;
-        }
+    onEditingRowSave: (values) => {
+      console.log('Editingvalues', values.values)
         setValidationErrors({});
-        props.onUpdate(values, table);
+        props.onUpdate(values.values, table);
         table.setEditingRow(null);
     },
     renderCreateRowModalContent: ({ table, row, internalEditComponents }) => {
     console.log('😡',internalEditComponents)
     return (
       <Stack>
-        <Title order={3}>Create New User</Title>
-        {internalEditComponents.filter(component => component.props.cell.column.columnDef.renderCreate)}
+        <Title order={3}>신규</Title>
+        {/* {internalEditComponents.filter(component => component.props.cell.column.columnDef.renderCreate)} */}
+        <Checkbox></Checkbox>
         <Flex justify="flex-end" mt="xl">
           <MRT_EditActionButtons variant="text" table={table} row={row} />
         </Flex>
@@ -269,7 +221,7 @@ const columns = useMemo(() => {
     )},
     renderEditRowModalContent: ({ table, row, internalEditComponents }) => (
       <Stack>
-        <Title order={3}>Edit User</Title>
+        <Title order={3}>수정</Title>
         {internalEditComponents.filter(component => component.props.cell.column.columnDef.renderEdit)}
         <Flex justify="flex-end" mt="xl">
           <MRT_EditActionButtons variant="text" table={table} row={row} />
@@ -394,14 +346,3 @@ function useDeleteUser() {
 
 //export default ExampleWithProviders;
 export default CustomTable; 
-
-const validateRequired = (value) => !!value.length;
-function validateUser(user) {
-  return {
-    firstName: !validateRequired(user.firstName)
-      ? 'First Name is Required'
-      : '',
-    lastName: !validateRequired(user.lastName) ? 'Last Name is Required' : '',
-    email: !validateRequired(user.firstName) ? 'Incorrect Email Format' : '',
-  };
-}

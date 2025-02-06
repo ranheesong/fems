@@ -3,74 +3,83 @@ export type User = {
     firstName: string;
     lastName: string;
     email: string;
-    lastDate: string;
     state: string;
+    checked: boolean;
+    date: string;
   };
   
 export const fakeData: User[] = [
     {
       id: '9s41rp',
       firstName: 'Kelvin',
-      lastName: 'ho',
+      lastName: 'shin',
       email: 'Jerod14@hotmail.com',
-      lastDate: '2025-02-01',
       state: 'Ohio',
+      checked: true,
+      date: '2025-02-01'
     },
     {
       id: '08m6rx',
       firstName: 'Molly',
-      lastName: 'kim',
+      lastName: 'shin',
       email: 'Hugh.Dach79@hotmail.com',
-      lastDate: '2025-02-01',
       state: 'Rhode Island',
+      checked: true,
+      date: '2025-02-01'
     },
     {
       id: '5ymtrc',
       firstName: 'Henry',
-      lastName: 'carrot',
+      lastName: 'shin',
       email: 'Camden.Macejkovic@yahoo.com',
-      lastDate: '2025-02-01',
       state: 'California',
+      checked: true,
+      date: '2025-02-01'
     },
     {
       id: 'ek5b97',
       firstName: 'Glenda',
-      lastName: 'park',
+      lastName: 'shin',
       email: 'Eric0@yahoo.com',
-      lastDate: '2025-02-01',
       state: 'Montana',
+      checked: true,
+      date: '2025-02-01'
     },
     {
       id: 'xxtydd',
       firstName: 'Leone',
-      lastName: 'lee',
+      lastName: 'shin',
       email: 'Ericka_Mueller52@yahoo.com',
-      lastDate: '2025-02-01',
       state: 'Colorado',
+      checked: false,
+      date: '2025-02-01'
     },
     {
       id: 'wzxj9m',
       firstName: 'Mckenna',
-      lastName: '2025-02-01',
+      lastName: 'shin',
       email: 'Veda_Feeney@yahoo.com',
-      lastDate: '2025-02-01',
       state: 'New York',
+      checked: true,
+      date: '2025-02-01'
     },
     {
       id: '21dwtz',
       firstName: 'Wyman',
-      lastName: 'yang',
+      lastName: 'shin',
       email: 'Melvin.Pacocha@yahoo.com',
-      lastDate: '2025-02-01',
       state: 'Montana',
+      checked: false,
+      date: '2025-02-01'
     },
     {
       id: 'o8oe4k',
       firstName: 'Janick',
       lastName: 'shin',
       email: 'Delfina12@gmail.com',
-      lastDate: '2025-02-01',
       state: 'Nebraska',
+      checked: true,
+      date: '2025-02-01'
     },
   ];
   
