@@ -23,16 +23,15 @@ import {
 } from '@tanstack/react-query';
 import { fakeData } from './makeData';
 import { Checkbox } from '@mantine/core';
-// import { DatePickerInput, DatesProvider} from '@mantine/dates';
-// import 'dayjs/locale/ko';
-// import moment from 'moment';
-// import { IconCalendar } from '@tabler/icons-react';
+import { DatePickerInput, DatesProvider} from '@mantine/dates';
+import 'dayjs/locale/ko';
+import moment from 'moment';
+import { IconCalendar } from '@tabler/icons-react';
 
 
 const CustomTable = (props) => {
   const [validationErrors, setValidationErrors] = useState({});
   const [data, setData] = useState(props.data || fakeData)
-  // const [editedUsers, setEditedUsers] = useState({});
 
 const columns = useMemo(() => {
     // console.log(props)
@@ -65,7 +64,9 @@ const columns = useMemo(() => {
                   error: validationErrors?.[col.key],
               };
             } else if (col.inputType === 'checkbox') { // 수정
+              columnDefinition.editVariant = 'checkbox';
               columnDefinition.accessorFn = (row) => row.checked || false;
+              // columnDefinition.mantineEditTextInputProps = inputProps;
               columnDefinition.Cell = ({ cell }) => (
                   <Checkbox
                     checked={cell.getValue()}
@@ -73,6 +74,36 @@ const columns = useMemo(() => {
                     }}
                   />
               );
+              columnDefinition.mantineEditTextInputProps= ({ cell }) => {
+                  <Checkbox
+                    checked={cell.getValue()}
+                    onChange={(event) => {
+                  }}
+              />
+              }
+            }
+            else if (col.inputType === 'date') {
+              columnDefinition.editVariant = 'date'; 
+              columnDefinition.Cell = ({ cell }) => { 
+                  return cell.getValue()      
+              };
+              columnDefinition.mantineEditTextInputProps= ({ }) =>  {
+
+                const [value, setValue] = useState()
+                return <DatesProvider settings={{ consistentWeeks: true, locale: 'ko' }}>
+                            <DatePickerInput
+                            rightSection={<IconCalendar size={18} stroke={1.5} />}
+                            rightSectionPointerEvents="none"
+                                valueFormat="YYYY-MM-DD"
+                                placeholder="Date input"
+                                maw={400}
+                                mx="auto"
+                                value={value}
+                                onChange={setValue}
+                            />
+                        </DatesProvider>
+              };
+              
             } 
             // else if (col.inputType === 'date') { // 수정
             //   columnDefinition.editVariant = 'date';
@@ -159,7 +190,7 @@ const columns = useMemo(() => {
   //DELETE action
   const openDeleteConfirmModal = (row) =>
     modals.openConfirmModal({
-      title: '삭제하시겠습니까?',
+      title: '삭제 확인',
       children: (
         <Text>
           Id : {row.original.id} 데이터를 삭제 하시겠습니까?
@@ -177,7 +208,7 @@ const columns = useMemo(() => {
     data: fetchedUsers,
     createDisplayMode: 'modal',
     editDisplayMode: 'modal',
-    enableEditing: true,
+    enableEditing: !props.showEdit && !props.showDelete ? false : true,
     getRowId: (row) => row.id,
     mantineToolbarAlertBannerProps: isLoadingUsersError
       ? {
@@ -194,7 +225,7 @@ const columns = useMemo(() => {
     // onCreatingRowSave: handleCreateUser,
     // onCreatingRowSave: props.onCreate, // 예시
     onCreatingRowSave: (values) => {
-      console.log('Creatingvalues, mode',  values.values)
+      console.log('Creatingvalues, mode',  values, values.values)
         setValidationErrors({});
         props.onCreate( values.values, table);
         table.setCreatingRow(null);
@@ -213,50 +244,104 @@ const columns = useMemo(() => {
       <Stack>
         <Title order={3}>신규</Title>
         {/* {internalEditComponents.filter(component => component.props.cell.column.columnDef.renderCreate)} */}
-        <Checkbox></Checkbox>
+        {internalEditComponents.filter(component => component.props.cell.column.columnDef.renderCreate).map(component => {
+            if (component.props.cell.column.columnDef.editVariant == "checkbox") {
+              // return <Checkbox key={component.key}></Checkbox>
+              const columnDef = component.props.cell.column.columnDef;
+              const { ...rest } = component;
+
+              const updatedComponent = {
+                ...rest,
+                props: {
+                  ...component.props,
+                  cell: {
+                    ...component.props.cell,
+                    column: {
+                      ...component.props.cell.column,
+                      columnDef: {
+                        ...columnDef,
+                        // editVariant: "checkbox"
+                      }
+                    }
+                  }
+                },
+              }
+
+              return updatedComponent
+              ,<div label="Checked"><Checkbox label="Flag" key={component.key}></Checkbox></div>
+            } if (component.props.cell.column.columnDef.editVariant == "date") {
+              const { ...rest } = component;
+              return (
+                component, <DatesProvider settings={{ consistentWeeks: true, locale: 'ko' }}>
+                    <DatePickerInput
+                    rightSection={<IconCalendar size={18} stroke={1.5} />}
+                    rightSectionPointerEvents="none"
+                    label="Date"
+                    valueFormat="YYYY-MM-DD"
+                    placeholder="Date input"
+                    maw={400}
+                    mx="auto"
+                    />
+                </DatesProvider>
+            );
+            } else {
+              return component
+            }
+          })}
         <Flex justify="flex-end" mt="xl">
           <MRT_EditActionButtons variant="text" table={table} row={row} />
         </Flex>
       </Stack>
     )},
+
     renderEditRowModalContent: ({ table, row, internalEditComponents }) => (
       <Stack>
         <Title order={3}>수정</Title>
-        {internalEditComponents.filter(component => component.props.cell.column.columnDef.renderEdit)}
+        {internalEditComponents}
         <Flex justify="flex-end" mt="xl">
           <MRT_EditActionButtons variant="text" table={table} row={row} />
         </Flex>
       </Stack>
     ),
-    renderRowActions: ({ row, table }) => (
-      <Flex gap="md">
-        <Tooltip label="Edit">
-          <ActionIcon onClick={() => table.setEditingRow(row)}>
-            <IconEdit />
-          </ActionIcon>
-        </Tooltip>
-        <Tooltip label="Delete">
-          <ActionIcon color="red" onClick={() => openDeleteConfirmModal(row)}>
-            <IconTrash />
-          </ActionIcon>
-        </Tooltip>
-      </Flex>
-    ),
-    renderTopToolbarCustomActions: ({ table }) => (
-      <Button
-        onClick={() => {
-          table.setCreatingRow(true); //simplest way to open the create row modal with no default values
-          //or you can pass in a row object to set default values with the `createRow` helper function
-          // table.setCreatingRow(
-          //   createRow(table, {
-          //     //optionally pass in default values for the new row, useful for nested data or other complex scenarios
-          //   }),
-          // );
-        }}
-      >
-        신규
-      </Button>
-    ),
+    renderRowActions: ({ row, table }) => {
+      return (
+        <Flex gap="md">
+          {props.showEdit && ( // showEdit prop이 true일 때만 수정 버튼 표시
+            <Tooltip label="Edit">
+              <ActionIcon onClick={() => table.setEditingRow(row)}>
+                <IconEdit />
+              </ActionIcon>
+            </Tooltip>
+          )}
+          {props.showDelete && ( // showDelete prop이 true일 때만 삭제 버튼 표시
+            <Tooltip label="Delete">
+              <ActionIcon color="red" onClick={() => openDeleteConfirmModal(row)}>
+                <IconTrash />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Flex>
+      );
+    },
+    renderTopToolbarCustomActions: ({ table }) => {
+      if (props.showCreate) {
+        return (
+        <Button
+          onClick={() => {
+            table.setCreatingRow(true); 
+            // table.setCreatingRow(
+            //   createRow(table, {
+            //     //optionally pass in default values for the new row, useful for nested data or other complex scenarios
+            //   }),
+            // );
+          }}
+        >
+          추가
+        </Button>
+        )
+      }
+      return null;
+    },
     state: {
       isLoading: isLoadingUsers,
       isSaving: isCreatingUser || isUpdatingUser || isDeletingUser,
@@ -269,7 +354,7 @@ const columns = useMemo(() => {
 };
 
 //CREATE hook (post new user to api)
-function useCreateUser() {
+function useCreateUser(newUserInfo) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (user) => {

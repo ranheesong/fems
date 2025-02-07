@@ -58,7 +58,7 @@ const columnsConfig = [
   },
   {
     key: 'checked',
-    header: 'Checked',
+    header: 'Flag',
     inputType: 'checkbox',
   },
   // {
@@ -95,7 +95,7 @@ export default function Page() {
                 <h2>계측(TAG) 기준 정보 관리</h2>
                 <ActionToggle/>
               </Group>
-              <Group gap='xs' justify='flex-end' align='flex-end' className={classes.search}>
+              {/* <Group gap='xs' justify='flex-end' align='flex-end' className={classes.search}>
                 <InputText
                   label="input"
                   placeholder="input value"
@@ -114,18 +114,13 @@ export default function Page() {
                   label="end date"
                   placeholder="Pick end date"
                 />
-                {/* <DateTimePicker
-                  label="datetime"
-                  placeholder="Pick date and time"
-                /> */}
                 <MyButton
                   variant="filled"
                 >조회</MyButton>
-              </Group>
-          {/* 주석 */}
+              </Group> */}
           </header>
+          
           <Group>
-            
           <QueryClientProvider client={queryClient}>
             <ModalsProvider>
               <CustomTable
@@ -133,6 +128,9 @@ export default function Page() {
                 onCreate={handleCreate}
                 onUpdate={handleUpdate}
                 onDelete={handleDelete}
+                showCreate={true} 
+                showEdit={true} 
+                showDelete={true}
               />
             </ModalsProvider>
           </QueryClientProvider>
