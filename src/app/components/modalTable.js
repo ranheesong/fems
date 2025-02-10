@@ -239,50 +239,38 @@ const columns = useMemo(() => {
         table.setEditingRow(null);
     },
     renderCreateRowModalContent: ({ table, row, internalEditComponents }) => {
-    console.log('😡',internalEditComponents)
+    // console.log('😡',internalEditComponents)
     return (
       <Stack>
         <Title order={3}>신규</Title>
-        {/* {internalEditComponents.filter(component => component.props.cell.column.columnDef.renderCreate)} */}
         {internalEditComponents.filter(component => component.props.cell.column.columnDef.renderCreate).map(component => {
+            const EditCheckbox = (props) => {
+              const [checked, setChecked] = useState(props.checked)
+              
+              return <><label className="m_8fdc1311 mantine-InputWrapper-label mantine-Select-label" style={{ marginTop: '10px' }}>{component.props.cell.column.columnDef.header}</label>
+                <Checkbox checked={checked} onChange={e=>{
+                component.props.cell.row._valuesCache[component.props.cell.column.id] = e.target.checked
+                setChecked(e.target.checked)
+              }}></Checkbox></>
+            }
+
             if (component.props.cell.column.columnDef.editVariant == "checkbox") {
-              // return <Checkbox key={component.key}></Checkbox>
-              const columnDef = component.props.cell.column.columnDef;
-              const { ...rest } = component;
-
-              const updatedComponent = {
-                ...rest,
-                props: {
-                  ...component.props,
-                  cell: {
-                    ...component.props.cell,
-                    column: {
-                      ...component.props.cell.column,
-                      columnDef: {
-                        ...columnDef,
-                        // editVariant: "checkbox"
-                      }
-                    }
-                  }
-                },
-              }
-
-              return updatedComponent
-              ,<div label="Checked"><Checkbox label="Flag" key={component.key}></Checkbox></div>
+              return <EditCheckbox key={component.key} checked={component.props.cell.getValue()} />
+              
             } if (component.props.cell.column.columnDef.editVariant == "date") {
-              const { ...rest } = component;
               return (
-                component, <DatesProvider settings={{ consistentWeeks: true, locale: 'ko' }}>
+                <>
+                <DatesProvider settings={{ consistentWeeks: true, locale: 'ko' }}>
                     <DatePickerInput
                     rightSection={<IconCalendar size={18} stroke={1.5} />}
                     rightSectionPointerEvents="none"
+                    key={component.key}
                     label="Date"
                     valueFormat="YYYY-MM-DD"
                     placeholder="Date input"
-                    maw={400}
-                    mx="auto"
                     />
                 </DatesProvider>
+                </>
             );
             } else {
               return component
@@ -297,7 +285,42 @@ const columns = useMemo(() => {
     renderEditRowModalContent: ({ table, row, internalEditComponents }) => (
       <Stack>
         <Title order={3}>수정</Title>
-        {internalEditComponents}
+        {internalEditComponents.filter(component => component.props.cell.column.columnDef.renderCreate).map(component => {
+            const EditCheckbox = (props) => {
+              const [checked, setChecked] = useState(props.checked)
+              
+              return <><label className="m_8fdc1311 mantine-InputWrapper-label mantine-Select-label" style={{ marginTop: '10px' }}>{component.props.cell.column.columnDef.header}</label>
+                <Checkbox checked={checked} onChange={e=>{
+                component.props.cell.row._valuesCache[component.props.cell.column.id] = e.target.checked
+                setChecked(e.target.checked)
+              }}></Checkbox></>
+            }
+
+            if (component.props.cell.column.columnDef.editVariant == "checkbox") {
+              return <EditCheckbox key={component.key} checked={component.props.cell.getValue()} />
+              
+
+            } if (component.props.cell.column.columnDef.editVariant == "date") {
+              <>
+              <DatesProvider settings={{ consistentWeeks: true, locale: 'ko' }}>
+                  <DatePickerInput
+                  rightSection={<IconCalendar size={18} stroke={1.5} />}
+                  rightSectionPointerEvents="none"
+                  key={component.key}
+                  label="Date"
+                  valueFormat="YYYY-MM-DD"
+                  placeholder="Date input"
+                  value={component.props.cell.getValue()}
+                  onChange={e=>{
+                    component.props.cell.row._valuesCache[component.props.cell.column.id] = e.target.value
+                  }}
+                  />
+              </DatesProvider>
+              </>
+            } else {
+              return component
+            }
+          })}
         <Flex justify="flex-end" mt="xl">
           <MRT_EditActionButtons variant="text" table={table} row={row} />
         </Flex>

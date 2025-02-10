@@ -6,6 +6,7 @@ import ActionToggle from '../../components/actionToggle'
 // import ReactTable from '../../components/reactTable'
 import basicTable from '../../components/mantaineTable'
 import CustomTable from '../../components/modalTable'
+import CustomModal from '../../components/customModal'
 import { MantineProvider, 
   Group,
   Box,
@@ -52,13 +53,14 @@ const columnsConfig = [
   {
     key: 'checked',
     header: 'Flag',
+    header: 'Flag',
     inputType: 'checkbox',
   },
-  // {
-  //   key: 'date',
-  //   header: 'Date',
-  //   inputType: 'date',
-  // },
+  {
+    key: 'date',
+    header: 'Date',
+    inputType: 'date',
+  },
 ];
 
 export default function Page() {
@@ -89,12 +91,16 @@ export default function Page() {
                 <ActionToggle/>
               </Group>
           </header>
+          
           <Group>
             <basicTable></basicTable>
           </Group>
           <Group>
           <QueryClientProvider client={queryClient}>
             <ModalsProvider>
+              {/* <CustomModal
+                columns={columnsConfig}
+              ></CustomModal> */}
               <CustomTable
                 columns={columnsConfig}
                 onCreate={handleCreate}
