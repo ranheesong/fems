@@ -4,7 +4,7 @@ import * as React from 'react'
 // import DateTimePicker from './components/datetimepicker'
 import ActionToggle from '../../components/actionToggle'
 // import ReactTable from '../../components/reactTable'
-import basicTable from '../../components/mantaineTable'
+import BasicTable from '../../components/mantaineTable'
 import CustomTable from '../../components/modalTable'
 import CustomModal from '../../components/customModal'
 import { MantineProvider, 
@@ -14,50 +14,49 @@ import { MantineProvider,
   } from '@mantine/core';
 import classes from '../../css/HeaderMenu.module.css';
 // import CustomModal from './components/modal'; // 모달 컴포넌트 import
-import { usStates } from '../../components/makeData';
+import { usStates, fakeData } from '../../components/makeData';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ModalsProvider } from '@mantine/modals';
 
 
 const columnsConfig = [
   {
-    key: 'id',
+    accessorKey: 'id',
     header: 'Id',
     enableEditing: false,
   },
   {
-    key: 'firstName',
+    accessorKey: 'firstName',
     header: 'First Name',
     inputType: 'text', // or 'email', 'number', etc.
     required: true,
   },
   {
-    key: 'lastName',
+    accessorKey: 'lastName',
     header: 'Last Name',
     inputType: 'text',
     required: true,
     renderEdit: false,
   },
   {
-    key: 'email',
+    accessorKey: 'email',
     header: 'Email',
     inputType: 'email',
     renderCreate: false,
   },
   {
-    key: 'state',
+    accessorKey: 'state',
     header: 'State',
     inputType: 'select',
     options: usStates, // Select options
   },
   {
-    key: 'checked',
-    header: 'Flag',
-    header: 'Flag',
+    accessorKey: 'checked',
+    header: 'Checked',
     inputType: 'checkbox',
   },
   {
-    key: 'date',
+    accessorKey: 'date',
     header: 'Date',
     inputType: 'date',
   },
@@ -93,25 +92,18 @@ export default function Page() {
           </header>
           
           <Group>
-            <basicTable></basicTable>
-          </Group>
-          <Group>
-          <QueryClientProvider client={queryClient}>
-            <ModalsProvider>
-              {/* <CustomModal
+            <QueryClientProvider client={queryClient}>
+              <BasicTable
                 columns={columnsConfig}
-              ></CustomModal> */}
-              <CustomTable
-                columns={columnsConfig}
+                data={fakeData}
                 onCreate={handleCreate}
                 onUpdate={handleUpdate}
                 onDelete={handleDelete}
                 showCreate={true} 
                 showEdit={true} 
                 showDelete={true}
-              />
-            </ModalsProvider>
-          </QueryClientProvider>
+              ></BasicTable>
+            </QueryClientProvider>
           </Group>
 
         </Box>
