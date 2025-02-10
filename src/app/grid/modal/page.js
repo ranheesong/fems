@@ -10,6 +10,7 @@ import ActionToggle from '../../components/actionToggle'
 // import ReactTable from '../../components/reactTable'
 // import TestTable from '../../components/testTable'
 import CustomTable from '../../components/modalTable'
+import CustomModal from '../../components/customModal'
 import { MantineProvider, 
   Group,
   Box,
@@ -61,11 +62,11 @@ const columnsConfig = [
     header: 'Flag',
     inputType: 'checkbox',
   },
-  // {
-  //   key: 'date',
-  //   header: 'Date',
-  //   inputType: 'date',
-  // },
+  {
+    key: 'date',
+    header: 'Date',
+    inputType: 'date',
+  },
 ];
 
 export default function Page() {
@@ -95,34 +96,14 @@ export default function Page() {
                 <h2>계측(TAG) 기준 정보 관리</h2>
                 <ActionToggle/>
               </Group>
-              {/* <Group gap='xs' justify='flex-end' align='flex-end' className={classes.search}>
-                <InputText
-                  label="input"
-                  placeholder="input value"
-                />
-                <div>
-                <InputSelect
-                  label="select"
-                  placeholder="Pick value"
-                />
-                </div>
-                <DatePicker
-                  label="start date"
-                  placeholder="Pick start date"
-                />
-                <DatePicker
-                  label="end date"
-                  placeholder="Pick end date"
-                />
-                <MyButton
-                  variant="filled"
-                >조회</MyButton>
-              </Group> */}
           </header>
           
           <Group>
           <QueryClientProvider client={queryClient}>
             <ModalsProvider>
+              {/* <CustomModal
+                columns={columnsConfig}
+              ></CustomModal> */}
               <CustomTable
                 columns={columnsConfig}
                 onCreate={handleCreate}
