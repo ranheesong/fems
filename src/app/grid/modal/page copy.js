@@ -4,7 +4,7 @@ import * as React from 'react'
 // import DateTimePicker from './components/datetimepicker'
 import ActionToggle from '../../components/actionToggle'
 // import ReactTable from '../../components/reactTable'
-import basicTable from '../../components/mantaineTable'
+// import TestTable from '../../components/testTable'
 import CustomTable from '../../components/modalTable'
 import { MantineProvider, 
   Group,
@@ -16,7 +16,10 @@ import classes from '../../css/HeaderMenu.module.css';
 import { usStates } from '../../components/makeData';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ModalsProvider } from '@mantine/modals';
-
+// import { DatePickerInput, DatesProvider} from '@mantine/dates';
+// import 'dayjs/locale/ko';
+// import moment from 'moment';
+// import { IconCalendar } from '@tabler/icons-react';
 
 const columnsConfig = [
   {
@@ -89,9 +92,7 @@ export default function Page() {
                 <ActionToggle/>
               </Group>
           </header>
-          <Group>
-            <basicTable></basicTable>
-          </Group>
+          
           <Group>
           <QueryClientProvider client={queryClient}>
             <ModalsProvider>
