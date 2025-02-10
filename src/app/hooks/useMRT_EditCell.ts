@@ -6,7 +6,10 @@ import {
     MRT_TableInstance,
 } from "mantine-react-table";
 import { useState } from "react";
-import { InlineColumnDef } from "../components/inline/InlineTable";
+import {
+    getValue,
+    MRT_InlineColumnDef,
+} from "../components/inline/MR_InlineTable";
 
 function formatDate(date) {
     const d = new Date(date);
@@ -36,20 +39,20 @@ export function useMRT_EditCell<TData extends MRT_RowData>(
     const { getState, setEditingCell, setEditingRow, setCreatingRow } = table;
     const { editingRow, creatingRow } = getState();
 
-    const [value, setValue] = useState(
-        () =>
-            row._valuesCache[column.id] ||
-            row.original[column.id] ||
-            cell.getValue()
-    );
+    const [value, setValue] = useState(getValue(cell));
 
     const isCreating = creatingRow?.id === row.id;
     const isEditing = editingRow?.id === row.id;
 
-    const columnDef = column.columnDef as InlineColumnDef;
+    const columnDef = column.columnDef as MRT_InlineColumnDef;
 
     const handleOnChange = (e) => {
-        let newValue = e.target ? e.target.value : e;
+        let newValue;
+        if (e == null) newValue = "";
+        else if (e.target == null) newValue = e;
+        else newValue = e.target.value;
+
+        console.log({ newValue });
 
         const editProps = columnDef.editProps;
         switch (editProps.type) {
@@ -58,7 +61,7 @@ export function useMRT_EditCell<TData extends MRT_RowData>(
                     editProps.data[e.target.checked ? "checked" : "unchecked"];
                 break;
             case "date":
-                newValue = formatDate(newValue);
+                newValue = newValue != "" ? formatDate(newValue) : "";
                 break;
             case "modal":
                 break;
