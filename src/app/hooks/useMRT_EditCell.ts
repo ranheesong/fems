@@ -52,7 +52,29 @@ export function useMRT_EditCell<TData extends MRT_RowData>(
         else if (e.target == null) newValue = e;
         else newValue = e.target.value;
 
-        console.log({ newValue });
+        const editProps = columnDef.editProps;
+        switch (editProps.type) {
+            case "checkbox":
+                newValue =
+                    editProps.data[e.target.checked ? "checked" : "unchecked"];
+                break;
+            case "date":
+                newValue = newValue != "" ? formatDate(newValue) : "";
+                break;
+            case "modal":
+                break;
+
+            default:
+                break;
+        }
+        setValue(newValue);
+    };
+
+    const handleBlur = (e) => {
+        let newValue;
+        if (e == null) newValue = "";
+        else if (e.target == null) newValue = e;
+        else newValue = e.target.value;
 
         const editProps = columnDef.editProps;
         switch (editProps.type) {
@@ -71,13 +93,7 @@ export function useMRT_EditCell<TData extends MRT_RowData>(
         }
         //@ts-ignore
         row._valuesCache[column.id] = newValue;
-        if (isCreating) setCreatingRow(row);
-        else if (isEditing) setEditingRow(row);
-        setValue(newValue);
-    };
-
-    const handleBlur = () => {
-        setEditingCell(null);
+        setEditingRow(row);
     };
     return { value, handleOnChange, handleBlur };
 }

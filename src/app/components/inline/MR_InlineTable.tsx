@@ -4,9 +4,9 @@ import "react-calendar/dist/Calendar.css";
 import "react-clock/dist/Clock.css";
 
 import "@mantine/core/styles.css";
-import "@mantine/dates/styles.css"; //if using mantine date picker features
-import "mantine-react-table/styles.css"; //make sure MRT styles were imported in your app root (once)
-import { useEffect, useMemo, useRef, useState } from "react";
+import "@mantine/dates/styles.css";
+import "mantine-react-table/styles.css";
+import { useEffect, useMemo, useState } from "react";
 import {
     MantineReactTable,
     // createRow,
@@ -16,37 +16,24 @@ import {
     MRT_RowSelectionState,
     type MRT_TableOptions,
     useMantineReactTable,
-    MRT_EditCellTextInput,
-    MRT_TableState,
     createRow,
 } from "mantine-react-table";
 import {
     ActionIcon,
-    Autocomplete,
-    Badge,
     Button,
-    Center,
     Checkbox,
     ComboboxData,
     Flex,
     Input,
-    Select,
     Text,
     Tooltip,
 } from "@mantine/core";
-import { ModalsProvider, modals } from "@mantine/modals";
+import { modals } from "@mantine/modals";
 import {
-    IconBrandTinder,
-    IconCircleDashedPlus,
-    IconEdit,
-    IconEditCircle,
-    IconEyeEdit,
     IconKeyFilled,
     IconMoodEdit,
     IconMoodPlus,
-    IconPlus,
     IconRefresh,
-    IconSearch,
 } from "@tabler/icons-react";
 import {
     CheckboxMappingData,
@@ -54,8 +41,10 @@ import {
     EditDatePicker,
     EditModal,
     EditSelect,
+    EditText,
 } from "./edit/MRT_EditCellInputs";
 import { MantineTableCellProps } from "@/app/hooks/useMRT_EditCell";
+import { OnChangeFn } from "@tanstack/react-table";
 
 // 기존 MRT_TableOptions에 새로운 속성 추가하기
 // 컬럼 속성
@@ -82,15 +71,18 @@ interface MRT_InlineTableOptions extends MRT_TableOptions<MRT_RowData> {
     onCreate?: (data: MRT_RowData) => void; // 추가 함수
     onSave?: (data: []) => void; // 저장 함수
     onDelete?: (data: MRT_RowData) => void; // 삭제 함수
+
+    refetch?: () => void;
 }
 
+// 상태 표시 컬럼럼
 const MRT_StateColumn = {
     id: "MRT_State",
     header: "상태",
     enableEditing: false,
     size: 80,
     defaultValue: "추가",
-    Cell: (props) => {
+    Cell: (props: MantineTableCellProps<MRT_RowData>) => {
         const stateMessage =
             props.row._valuesCache.MRT_State || props.row.original.MRT_State;
         return (
@@ -109,6 +101,7 @@ const MRT_StateColumn = {
     },
 };
 
+// 현재 CELL 값 조회회
 export const getValue = (cell) => {
     let inputValue;
     if (cell.row._valuesCache[cell.column.id] != null) {
@@ -121,24 +114,27 @@ export const getValue = (cell) => {
     return inputValue;
 };
 
+// 수정 타입별 컴포넌트
 const editRenderProps = {
     text: {
-        mantineEditTextInputProps: {
-            type: "text",
-            required: true,
+        Cell: ({ cell }: MantineTableCellProps<MRT_RowData>) => {
+            const value = getValue(cell);
+            return value;
         },
+        Edit: EditText,
     },
     select: {
-        Cell: ({ cell, column, row }: MantineTableCellProps<MRT_RowData>) => {
+        Cell: ({ cell, column }: MantineTableCellProps<MRT_RowData>) => {
             const find = column.columnDef.editProps.data.find(
                 (data) => data.value == getValue(cell)
             );
+
             return find ? find["label"] : "";
         },
         Edit: EditSelect,
     },
     checkbox: {
-        Cell: ({ cell, column, row }: MantineTableCellProps<MRT_RowData>) => {
+        Cell: ({ cell, column }: MantineTableCellProps<MRT_RowData>) => {
             const value = getValue(cell);
             const find = Object.entries(column.columnDef.editProps.data).find(
                 ([, v]) => v === value
@@ -158,14 +154,14 @@ const editRenderProps = {
         Edit: EditCheckbox,
     },
     date: {
-        Cell: ({ cell, column, row }: MantineTableCellProps<MRT_RowData>) => {
+        Cell: ({ cell }: MantineTableCellProps<MRT_RowData>) => {
             const value = getValue(cell);
             return value;
         },
         Edit: EditDatePicker,
     },
     modal: {
-        Cell: ({ cell, column, row }: MantineTableCellProps<MRT_RowData>) => {
+        Cell: ({ cell }: MantineTableCellProps<MRT_RowData>) => {
             const value = getValue(cell);
             return (
                 <Input
@@ -182,13 +178,44 @@ const editRenderProps = {
     },
 };
 
+// 행 변경 확인
+const hasRowChanged = (row: MRT_Row<MRT_RowData>) => {
+    const isChanged = row
+        .getAllCells()
+        .filter((cell) => {
+            const { column } = cell;
+            const { columnDef } = column;
+            // enableEditing이 참
+            // editProps의 타입이 있음
+            // mrt-row로 시작하지 않음
+            // MRT_State 이면 안됨
+            return (
+                columnDef.enableEditing != false &&
+                columnDef.editProps.type != null &&
+                !column.id.startsWith("mrt-row") &&
+                column.id != "MRT_State"
+            );
+        })
+        .map((cell) => cell.column.id)
+        .some(
+            (columnId) => row.original[columnId] != row._valuesCache[columnId]
+        );
+    return isChanged;
+};
+
 const MRT_InlineTable = (inlineTableOptions: MRT_InlineTableOptions) => {
-    const [changedRowIds, setChangedRowIds] = useState<string[]>([]);
+    const [editedRows, setEditedRows] = useState<
+        Record<string, MRT_Row<MRT_RowData>>[]
+    >([]);
     const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
     useEffect(() => {
-        console.log(changedRowIds);
-    }, [changedRowIds]);
+        // console.log(editedRows);
+    }, [editedRows]);
+
+    useEffect(() => {
+        // console.log(rowSelection);
+    }, [rowSelection]);
 
     // 컬럼 속성 추가
     const columns = useMemo<MRT_InlineColumnDef[]>(() => {
@@ -225,7 +252,7 @@ const MRT_InlineTable = (inlineTableOptions: MRT_InlineTableOptions) => {
         return primaryKeys;
     }, [columns]);
 
-    //CREATE action
+    // 추가한 행 저장 이벤트
     const onCreatingRowSave: MRT_TableOptions<MRT_RowData>["onCreatingRowSave"] =
         async (props) => {
             modals.openConfirmModal({
@@ -243,48 +270,41 @@ const MRT_InlineTable = (inlineTableOptions: MRT_InlineTableOptions) => {
                             ...props.row._valuesCache,
                         }).filter(([k, v]) => !k.startsWith("mrt-row"))
                     );
-                    props.table.options.onCreate(data);
+                    props.table.options.onCreate &&
+                        props.table.options.onCreate(data);
                     props.exitCreatingMode();
+                    setRowSelection({
+                        [getRowId(props.row._valuesCache)]: true,
+                    });
+                    setEditedRows({});
                 },
             });
         };
 
-    const onEditingRowSave: MRT_TableOptions<MRT_RowData>["onEditingRowSave"] =
-        (props) => {
-            const row = props.row;
-            let changeFlag = false;
-            for (const column of Object.keys(row.original)) {
-                const originalValue = row.original[column];
-                const changedValue = row._valuesCache[column];
+    // 행 수정 시 표시
+    const onEditingRowChange: OnChangeFn<MRT_Row<MRT_RowData>> = (
+        row: MRT_Row<MRT_RowData>
+    ) => {
+        if (hasRowChanged(row) && row.original["MRT_State"] != "추가") {
+            row._valuesCache["MRT_State"] = "수정";
+            setEditedRows((editedRows) => ({
+                ...editedRows,
+                [row.id]: row,
+            }));
+        } else {
+            row._valuesCache["MRT_State"] = "";
+            const { [row.id]: removed, ...remainRows } = editedRows;
+            setEditedRows(remainRows);
+        }
+    };
 
-                if (
-                    originalValue != changedValue &&
-                    changedValue != undefined
-                ) {
-                    changeFlag = true;
-
-                    break;
-                }
-            }
-            if (changeFlag) {
-                row._valuesCache.MRT_State = "수정";
-                setChangedRowIds([...changedRowIds, row.id]);
-            } else {
-                row._valuesCache.MRT_State = "";
-                setChangedRowIds(
-                    changedRowIds.filter(
-                        (changedRowId) => changedRowId != row.id
-                    )
-                );
-            }
-            table.setEditingRow(null); //exit editing mode
-        };
-
+    // 고유 id 생성
     const getRowId = (row) =>
         inlineTableOptions.getRowId
             ? inlineTableOptions.getRowId(row)
             : primaryKeys.map((primaryKey) => row[primaryKey]).join("-");
 
+    // 행 추가 버튼 이벤트
     const getCreateRow = (table) =>
         table.getAllColumns().reduce((obj, column) => {
             const defaultValue = column.columnDef.defaultValue;
@@ -294,116 +314,94 @@ const MRT_InlineTable = (inlineTableOptions: MRT_InlineTableOptions) => {
                     : defaultValue || "";
             return obj;
         }, {});
-    const renderRowActions: MRT_TableOptions<MRT_RowData>["renderRowActions"] =
-        ({ row, table }) => {
+
+    // 인라인 수정 행 저장 이벤트
+    // const renderRowActions: MRT_TableOptions<MRT_RowData>["renderRowActions"] =
+    //     ({ row, table }) => {
+    //         return (
+    //             inlineTableOptions.enableEdit && (
+    //                 <Flex gap={"xs"}>
+    //                     <Tooltip label="수정">
+    //                         <ActionIcon
+    //                             onClick={() => {
+    //                                 if (table.getState().creatingRow) {
+    //                                     return modals.open({
+    //                                         title: "수정 알림",
+    //                                         children: (
+    //                                             <Text>
+    //                                                 추가 작업 완료 후
+    //                                                 진행해주세요
+    //                                             </Text>
+    //                                         ),
+    //                                     });
+    //                                 }
+
+    //                                 table.setEditingRow(row);
+    //                             }}
+    //                         >
+    //                             <IconEdit />
+    //                         </ActionIcon>
+    //                     </Tooltip>
+    //                     <Tooltip label="초기화">
+    //                         <ActionIcon
+    //                             color="#7a84b9"
+    //                             onClick={() => {
+    //                                 modals.openConfirmModal({
+    //                                     title: "초기화 알림",
+    //                                     children: (
+    //                                         <Text>
+    //                                             행을 초기화하시겠습니까?
+    //                                         </Text>
+    //                                     ),
+    //                                     labels: {
+    //                                         confirm: "초기화",
+    //                                         cancel: "취소",
+    //                                     },
+    //                                     confirmProps: { color: "#7a84b9" },
+    //                                     onConfirm: () => {
+    //                                         const columns =
+    //                                             table.getAllColumns();
+    //                                         columns.forEach(({ id }) => {
+    //                                             if (
+    //                                                 row._valuesCache[id] != null
+    //                                             ) {
+    //                                                 row._valuesCache[id] =
+    //                                                     row.original[id];
+    //                                             }
+    //                                             if (id == "MRT_State") {
+    //                                                 row.original["MRT_State"] =
+    //                                                     "";
+    //                                                 row._valuesCache[
+    //                                                     "MRT_State"
+    //                                                 ] = "";
+    //                                             }
+    //                                         });
+    //                                         console.log(row);
+
+    //                                         setEditedRows(
+    //                                             changedRowIds.filter(
+    //                                                 (changedRowId) =>
+    //                                                     changedRowId != row.id
+    //                                             )
+    //                                         );
+    //                                     },
+    //                                 });
+    //                             }}
+    //                         >
+    //                             <IconRefresh />
+    //                         </ActionIcon>
+    //                     </Tooltip>
+    //                 </Flex>
+    //             )
+    //         );
+    //     };
+
+    // 툴바 이벤트
+    // 추가, 수정, 삭제, 데이터 최신화화
+    const renderTopToolbarCustomActions: MRT_TableOptions<MRT_RowData>["renderTopToolbarCustomActions"] =
+        ({ table }) => {
             return (
-                inlineTableOptions.enableEdit && (
-                    <Flex gap={"xs"}>
-                        <Tooltip label="수정">
-                            <ActionIcon
-                                onClick={() => {
-                                    if (table.getState().creatingRow) {
-                                        return modals.open({
-                                            title: "수정 알림",
-                                            children: (
-                                                <Text>
-                                                    추가 작업 완료 후
-                                                    진행해주세요
-                                                </Text>
-                                            ),
-                                        });
-                                    }
-
-                                    table.setEditingRow(row);
-                                }}
-                            >
-                                <IconEdit />
-                            </ActionIcon>
-                        </Tooltip>
-                        <Tooltip label="초기화">
-                            <ActionIcon
-                                color="#7a84b9"
-                                onClick={() => {
-                                    modals.openConfirmModal({
-                                        title: "초기화 알림",
-                                        children: (
-                                            <Text>
-                                                행을 초기화하시겠습니까?
-                                            </Text>
-                                        ),
-                                        labels: {
-                                            confirm: "초기화",
-                                            cancel: "취소",
-                                        },
-                                        confirmProps: { color: "#7a84b9" },
-                                        onConfirm: () => {
-                                            const columns =
-                                                table.getAllColumns();
-                                            columns.forEach(({ id }) => {
-                                                if (
-                                                    row._valuesCache[id] != null
-                                                ) {
-                                                    row._valuesCache[id] =
-                                                        row.original[id];
-                                                }
-                                                if (id == "MRT_State") {
-                                                    row.original["MRT_State"] =
-                                                        "";
-                                                    row._valuesCache[
-                                                        "MRT_State"
-                                                    ] = "";
-                                                }
-                                            });
-                                            console.log(row);
-
-                                            setChangedRowIds(
-                                                changedRowIds.filter(
-                                                    (changedRowId) =>
-                                                        changedRowId != row.id
-                                                )
-                                            );
-                                        },
-                                    });
-                                }}
-                            >
-                                <IconRefresh />
-                            </ActionIcon>
-                        </Tooltip>
-                    </Flex>
-                )
-            );
-        };
-
-    const table = useMantineReactTable({
-        ...inlineTableOptions,
-
-        columns: columns, // 컬럼
-        data: inlineTableOptions.data, // 데이터
-
-        createDisplayMode: "row",
-        editDisplayMode: "row",
-
-        enableEditing:
-            inlineTableOptions.enableCreate || inlineTableOptions.enableEdit, // 버튼 옵션에 수정이 있는
-        enableRowSelection: inlineTableOptions.enableDelete, // 삭제 플래그 있을 경우
-
-        onRowSelectionChange: setRowSelection, // 행 체크 시 이벤트
-        enableBatchRowSelection: true, // 쉬프트 누르고 배치 선택
-
-        selectAllMode: "page",
-
-        state: { rowSelection },
-
-        getRowId: getRowId, // 기본키로 row id 생성 함수
-
-        onCreatingRowSave: onCreatingRowSave,
-
-        onEditingRowSave: onEditingRowSave,
-
-        renderRowActions: renderRowActions,
-        renderTopToolbarCustomActions: ({ table }) => {
-            return (
-                <Flex gap={"xs"}>
+                <Flex gap={"xs"} align={"center"}>
                     {inlineTableOptions.enableCreate && (
                         <Button
                             onClick={() => {
@@ -427,7 +425,7 @@ const MRT_InlineTable = (inlineTableOptions: MRT_InlineTableOptions) => {
                     )}
                     {inlineTableOptions.enableEdit && (
                         <Button
-                            disabled={changedRowIds.length == 0}
+                            disabled={Object.keys(editedRows).length == 0}
                             onClick={() => {
                                 // 추가 혹은 수정중인 행 체크크
                                 if (table.getState().creatingRow) {
@@ -455,58 +453,36 @@ const MRT_InlineTable = (inlineTableOptions: MRT_InlineTableOptions) => {
                                     title: "저장 알림",
                                     children: (
                                         <Text>
-                                            수정된 {changedRowIds.length}개의
+                                            수정된{" "}
+                                            {Object.keys(editedRows).length}개의
                                             행을 저장하시겠습니까?
                                         </Text>
                                     ),
                                     labels: { confirm: "저장", cancel: "취소" },
                                     confirmProps: { color: "blue" },
                                     onConfirm: () => {
-                                        inlineTableOptions.onSave(
-                                            table
-                                                .getRowModel()
-                                                .rows.filter((row) =>
-                                                    changedRowIds.includes(
-                                                        row.id
-                                                    )
+                                        inlineTableOptions.onSave &&
+                                            inlineTableOptions.onSave(
+                                                Object.values(editedRows).map(
+                                                    (row) => ({
+                                                        original: row.original,
+                                                        update: {
+                                                            ...row.original,
+                                                            ...row._valuesCache,
+                                                        },
+                                                    })
                                                 )
-                                                .map((row) => ({
-                                                    original: row.original,
-                                                    update: {
-                                                        ...row.original,
-                                                        ...row._valuesCache,
-                                                    },
-                                                }))
-                                        );
-
-                                        const columns = table.getAllColumns();
-                                        const rows = table.getRowModel().rows;
-                                        const length = rows.length;
-                                        for (
-                                            let index = 0;
-                                            index < length;
-                                            index++
-                                        ) {
-                                            const row = rows[index];
-                                            for (const column of columns) {
-                                                if (
-                                                    row._valuesCache[
-                                                        column.id
-                                                    ] != null
-                                                ) {
-                                                    row.original[column.id] =
-                                                        row._valuesCache[
-                                                            column.id
-                                                        ];
-                                                }
-                                                if (column.id == "MRT_State") {
-                                                    row.original.MRT_State = "";
-                                                    row._valuesCache.MRT_State =
-                                                        "";
-                                                }
+                                            );
+                                        const rowSelection = {};
+                                        Object.values(editedRows).forEach(
+                                            (data) => {
+                                                rowSelection[
+                                                    getRowId(data._valuesCache)
+                                                ] = true;
                                             }
-                                        }
-                                        setChangedRowIds([]);
+                                        );
+                                        setRowSelection(rowSelection);
+                                        setEditedRows({});
                                     },
                                 });
                             }}
@@ -553,27 +529,33 @@ const MRT_InlineTable = (inlineTableOptions: MRT_InlineTableOptions) => {
                                     labels: { confirm: "삭제", cancel: "취소" },
                                     confirmProps: { color: "red" },
                                     onConfirm: () => {
-                                        inlineTableOptions.onDelete(
-                                            table
-                                                .getRowModel()
-                                                .rows.filter((row) =>
-                                                    Object.keys(
-                                                        rowSelection
-                                                    ).includes(row.id)
-                                                )
-                                                .map((row) =>
-                                                    primaryKeys.reduce(
-                                                        (obj, primaryKey) => {
-                                                            obj[primaryKey] =
-                                                                row.original[
-                                                                    primaryKey
-                                                                ];
-                                                            return obj;
-                                                        },
-                                                        {}
+                                        inlineTableOptions.onDelete &&
+                                            inlineTableOptions.onDelete(
+                                                table
+                                                    .getRowModel()
+                                                    .rows.filter((row) =>
+                                                        Object.keys(
+                                                            rowSelection
+                                                        ).includes(row.id)
                                                     )
-                                                )
-                                        );
+                                                    .map((row) =>
+                                                        primaryKeys.reduce(
+                                                            (
+                                                                obj,
+                                                                primaryKey
+                                                            ) => {
+                                                                obj[
+                                                                    primaryKey
+                                                                ] =
+                                                                    row.original[
+                                                                        primaryKey
+                                                                    ];
+                                                                return obj;
+                                                            },
+                                                            {}
+                                                        )
+                                                    )
+                                            );
                                         setRowSelection({}); // 체크 해제
                                     },
                                 });
@@ -582,20 +564,51 @@ const MRT_InlineTable = (inlineTableOptions: MRT_InlineTableOptions) => {
                             삭제
                         </Button>
                     )}
+                    {inlineTableOptions.refetch && (
+                        <Tooltip label="데이터 최신화">
+                            <ActionIcon
+                                size={"lg"}
+                                onClick={() => inlineTableOptions.refetch()}
+                            >
+                                <IconRefresh />
+                            </ActionIcon>
+                        </Tooltip>
+                    )}
                 </Flex>
             );
-        },
+        };
+
+    const table = useMantineReactTable({
+        ...inlineTableOptions,
+
+        columns: columns, // 컬럼
+        data: inlineTableOptions.data, // 데이터
+
+        createDisplayMode: "row",
+        editDisplayMode: "table",
+
+        enableEditing:
+            inlineTableOptions.enableCreate || inlineTableOptions.enableEdit, // 버튼 옵션에 수정이 있는
+        enableRowSelection: inlineTableOptions.enableDelete, // 삭제 플래그 있을 경우
+
+        onRowSelectionChange: setRowSelection, // 행 체크 시 이벤트
+        enableBatchRowSelection: true, // 쉬프트 누르고 배치 선택
+
+        selectAllMode: "page",
+
+        state: { ...inlineTableOptions.state, rowSelection },
+
+        getRowId: getRowId, // 기본키로 row id 생성 함수
+
+        onCreatingRowSave: onCreatingRowSave,
+
+        onEditingRowChange: onEditingRowChange,
+
+        // renderRowActions: renderRowActions,
+        renderTopToolbarCustomActions: renderTopToolbarCustomActions,
     });
 
     return <MantineReactTable table={table} />;
 };
 
 export default MRT_InlineTable;
-
-// const defaultProps: MRT_InlineTableOptions = {
-//     enableCreate: false,
-//     enableEdit: false,
-//     enableDelete: false,
-// };
-
-// MRT_InlineTable.defaultProps = defaultProps;

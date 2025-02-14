@@ -16,6 +16,7 @@ import {
     Checkbox,
     Flex,
     Input,
+    MultiSelect,
     Select,
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
@@ -28,6 +29,18 @@ export type CheckboxMappingData = {
     checked: any;
     unchecked: any;
 };
+
+export function EditText(props: MantineTableCellProps<MRT_RowData>) {
+    const { value, handleOnChange, handleBlur } = useMRT_EditCell(props);
+    return (
+        <Input
+            value={value}
+            onChange={handleOnChange}
+            onBlur={handleBlur}
+            placeholder={props.column.columnDef.header}
+        />
+    );
+}
 
 export function EditSelect(props: MantineTableCellProps<MRT_RowData>) {
     const { value, handleOnChange, handleBlur } = useMRT_EditCell(props);
@@ -56,6 +69,7 @@ export function EditCheckbox(props: MantineTableCellProps<MRT_RowData>) {
             checked={find ? find[0] == "checked" : false}
             onBlur={handleBlur}
             onChange={handleOnChange}
+            placeholder={props.column.columnDef.header}
         />
     );
 }
@@ -69,7 +83,7 @@ export function EditDatePicker(props: MantineTableCellProps<MRT_RowData>) {
             clearable
             withSeconds
             valueFormat="YYYY-MM-DD H:mm:ss"
-            placeholder="날짜 선택"
+            placeholder={props.column.columnDef.header}
             onChange={handleOnChange}
             onBlur={handleBlur}
         />
