@@ -4,7 +4,7 @@ export type User = {
     lastName: string;
     email: string;
     state: string;
-    checked: boolean;
+    checked: string;
     date: string;
   };
   
@@ -15,7 +15,7 @@ export const fakeData: User[] = [
       lastName: 'shin',
       email: 'Jerod14@hotmail.com',
       state: 'Ohio',
-      checked: true,
+      checked: 'N',
       date: '2025-02-01'
     },
     {
@@ -24,7 +24,7 @@ export const fakeData: User[] = [
       lastName: 'shin',
       email: 'Hugh.Dach79@hotmail.com',
       state: 'Rhode Island',
-      checked: true,
+      checked: 'N',
       date: '2025-02-01'
     },
     {
@@ -33,7 +33,7 @@ export const fakeData: User[] = [
       lastName: 'shin',
       email: 'Camden.Macejkovic@yahoo.com',
       state: 'California',
-      checked: true,
+      checked: 'Y',
       date: '2025-02-01'
     },
     {
@@ -42,7 +42,7 @@ export const fakeData: User[] = [
       lastName: 'shin',
       email: 'Eric0@yahoo.com',
       state: 'Montana',
-      checked: true,
+      checked: 'N',
       date: '2025-02-01'
     },
     {
@@ -51,7 +51,7 @@ export const fakeData: User[] = [
       lastName: 'shin',
       email: 'Ericka_Mueller52@yahoo.com',
       state: 'Colorado',
-      checked: false,
+      checked: 'Y',
       date: '2025-02-01'
     },
     {
@@ -60,7 +60,7 @@ export const fakeData: User[] = [
       lastName: 'shin',
       email: 'Veda_Feeney@yahoo.com',
       state: 'New York',
-      checked: true,
+      checked: 'Y',
       date: '2025-02-01'
     },
     {
@@ -69,7 +69,7 @@ export const fakeData: User[] = [
       lastName: 'shin',
       email: 'Melvin.Pacocha@yahoo.com',
       state: 'Montana',
-      checked: false,
+      checked: 'Y',
       date: '2025-02-01'
     },
     {
@@ -78,7 +78,7 @@ export const fakeData: User[] = [
       lastName: 'shin',
       email: 'Delfina12@gmail.com',
       state: 'Nebraska',
-      checked: true,
+      checked: 'Y',
       date: '2025-02-01'
     },
   ];
