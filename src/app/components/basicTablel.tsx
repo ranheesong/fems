@@ -1,3 +1,7 @@
+{/*진행중
+-input modal창 선택 후_값
+*/}
+
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css'; 
 import 'mantine-react-table/styles.css';
@@ -11,14 +15,19 @@ import {
   MRT_ToggleFiltersButton,
   MRT_RowSelectionState,
 } from 'mantine-react-table';
-import { Box, Button, Checkbox, Flex, Container, Grid, NumberInput, TextInput, Select, Text, Modal} from '@mantine/core';
+import { Box, Button, Checkbox, Flex, Container, Grid, NumberInput, TextInput, Select, Text, Modal, AppShell, AppShellHeader, useMantineTheme, ActionIcon, Table} from '@mantine/core';
 import { data, usStates } from './basicdata';
 import { DatePickerInput, DatesProvider } from '@mantine/dates';
-import { IconCalendar } from '@tabler/icons-react';
+import { IconCalendar, IconSearch } from '@tabler/icons-react';
 import { ModalsProvider, modals } from "@mantine/modals";
 import { nanoid } from 'nanoid';
+import ActionToggle from './actionToggle';
+import { useMRT_EditCell } from '../hooks/useMRT_EditCell';
+import MRT_InlineTable from './inline/MR_InlineTable';
 
-const Input = ({ column, value, onChange }) =>  {
+const Input = ({ column, value, onChange, props}) =>  {
+    const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
+
     const handleChange = (event) => {
         onChange(column.accessorKey, event.currentTarget.value);
     };
@@ -33,7 +42,11 @@ const Input = ({ column, value, onChange }) =>  {
     };
 
     const handleSelectChange = (event) => {
-        onChange(column.accessorKey, event);
+        if (event === null) { // event가 null인 경우 (초기화)
+            onChange(column.accessorKey, null); // 명시적으로 null 전달
+        } else {
+            onChange(column.accessorKey, event);
+        }
     }
 
     const handleCheckboxChange = (event) => {
@@ -41,7 +54,8 @@ const Input = ({ column, value, onChange }) =>  {
         onChange(column.accessorKey, checkedValue);
     };
 
-    const displayValue = value !== undefined ? value : '';
+    const displaySelValue = value === null || value === undefined || value === "" ? null  : value;
+    const displayValue = value === null || value === undefined || value === "" ? ''  : value;
 
     switch (column.inputType) {
     case 'range':
@@ -72,8 +86,9 @@ const Input = ({ column, value, onChange }) =>  {
                 required={column.required}
                 disabled={column.enableEditing === false}
                 placeholder="select value"
-                value={displayValue} 
+                value={displaySelValue} 
                 onChange={handleSelectChange}
+                allowDeselect
             />
             </Grid.Col>
         );
@@ -110,6 +125,55 @@ const Input = ({ column, value, onChange }) =>  {
             </DatesProvider>
             </Grid.Col>
         );
+    case 'modal':
+        return (
+            <Grid.Col span={{ base: 12, xs: column.xs }}>
+                <Flex gap={2} align={"flex-end"}>
+                    <ActionIcon
+                        mb={5}
+                        variant="transparent"
+                        onClick={() => {
+                            modals.open({
+                                title: `모달`,
+                                size: "1000px",
+                                children: (
+                                    <MRT_InlineTable
+                                        columns={column.column}
+                                        data={column.data}
+                                        mantineTableBodyRowProps={({ row }) => (
+                                            {onDoubleClick: (e) => {
+                                                onChange(column.accessorKey, row.original[column.accessorKey]);
+                                                modals.closeAll();
+                                            },
+                                            style: {
+                                                cursor: "pointer",
+                                            },})
+                                        }
+                                    />
+                                ),
+                            });
+                        }}
+                    >
+                        <IconSearch color="#868e96" />
+                    </ActionIcon>
+                    <TextInput
+                    label={column.header}
+                    name={column.accessorKey}
+                    required={column.required}
+                    disabled={column.enableEditing === false}
+                    placeholder={column.enableEditing === false? 'autocomplete' : 'input Text value'}
+                    value={displayValue}
+                    // onChange={handleChange}
+                    onChange={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    style={{width: '100%'}}
+                    readOnly
+                />
+            </Flex>
+            </Grid.Col>
+        );
     default:
         return <Grid.Col span={{ base: 12, xs: column.xs }}>
                 <TextInput
@@ -144,6 +208,20 @@ const Example = (props) => {
 
     const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
     const [inputValues, setInputValues] = useState({});
+
+    const theme = useMantineTheme();
+    const [headerHeight, setHeaderHeight] = useState(0); // 헤더 높이 상태
+    useEffect(() => {
+        // 컴포넌트 마운트 후 헤더 높이 계산
+        const header = document.querySelector('.mantine-AppShell-header');
+        if (header) {
+            setHeaderHeight(header.offsetHeight);
+        }
+    }, []);
+    // const [tableData, setTableData] = useState(data); //저장/수정 후 리로드
+    // const [selectedRowId, setSelectedRowId] = useState<string | null>(null) //리로드 -> 해당 row 선택되게
+
+    const [alert, setAlert] = useState({ type: null, message: null });
 
     const handleInputChange = (key, value) => { // useCallback 제거
         formRef.current[key] = value; // formRef 업데이트
@@ -210,9 +288,9 @@ const Example = (props) => {
                             <Box
                             style={(theme) => ({
                                 backgroundColor:
-                                cellValue < 50_000
+                                cellValue < config.rangeArr[0]
                                     ? theme.colors.red[7]
-                                    : cellValue >= 50_000 && cellValue < 75_000
+                                    : cellValue >= config.rangeArr[0] && cellValue < config.rangeArr[1]
                                     ? theme.colors.yellow[7]
                                     : theme.colors.green[7],
                                 borderRadius: '4px',
@@ -249,7 +327,13 @@ const Example = (props) => {
                 column.Cell = ({ cell }) => cell.getValue<Date>()?.toLocaleDateString();
                 column.Header = ({ column }) => <em>{column.columnDef.header}</em>;
             } else if (config.inputType === 'select') {
-              // 필요한 설정 추가 (예: options)
+                column.defaultValue = config.defaultValue || '';
+                column.Cell = ({ cell, column }) => {
+                    const find = column.columnDef.options.find(
+                        (data) => data.value == cell.getValue()
+                    );
+                    return find ? find["label"] : "";
+                }  
             } else {
                 // 다른 inputType에 대한 처리 추가
             }
@@ -278,7 +362,7 @@ const table = useMantineReactTable({
             left: ['mrt-row-expand', 'mrt-row-select'],
         },
     },
-    paginationDisplayMode: 'pages',
+    paginationDisplayMode: 'default', //'pages'
     positionToolbarAlertBanner: 'bottom',
     mantinePaginationProps: {
         radius: 'md',
@@ -287,15 +371,32 @@ const table = useMantineReactTable({
     mantineSearchTextInputProps: {
         placeholder: 'Search Employees',
     },
-    getRowId: (row) => row.firstName,
+    getRowId: (row) => row.keyV,
     mantineTableBodyRowProps: ({ row }) => ({
         // onClick: row.getToggleSelectedHandler(),
         onClick: () => {
+            // const newRowSelection = { ...rowSelection };
+            // if (newRowSelection[row.id]) {
+            //     delete newRowSelection[row.id];
+            //     setInputValues({});
+            //     formRef.current = {};
+            // } else {
+            // newRowSelection[row.id] = true;
+            // formRef.current = row.original;
+            // setInputValues(row.original);
+            // }
+            // setRowSelection(newRowSelection);
+            // setSelectedRowId(row.id);
             setRowSelection({
                 [row.id]: !rowSelection[row.id],
             });
-            formRef.current = row.original;
-            setInputValues(row.original);
+            if (!rowSelection[row.id]) { 
+                formRef.current = row.original;
+                setInputValues(row.original);
+            } else {
+                setInputValues({}); // inputValues 초기화
+                formRef.current = {}; // formRef 초기화
+            }
         },
         selected: rowSelection[row.id],
         sx: { cursor: 'pointer' },
@@ -304,79 +405,77 @@ const table = useMantineReactTable({
         rowSelection,
     },
     onRowSelectionChange: setRowSelection,
-    renderTopToolbar: ({ table }) => {
+    renderTopToolbar: ({ table }) => { //renderTopToolbarCustomActions
         const handleCreate = async (props) => {
-            const formData = Object.keys(formRef.current).reduce((acc, key) => {
-                acc[key] = formRef.current[key];
-                return acc;
-            }, {});
-
-            setModalFormData(formData); // 모달에 표시할 formData 설정
-
-            modals.openConfirmModal({
-                title: <Text fw={700}>저장 알림</Text>,
-                children: <Text fw={500} c="dimmed" ta="center">해당 데이터를 저장하시겠습니까?</Text>,
-                labels: {
-                    confirm: "저장",
-                    cancel: "취소",
-                },
-                confirmProps: { color: "blue" },
-                onConfirm: () => {
-                    console.log(formData)
-                    setShowFormDataModal(true);
-                    setInputValues({}); //초기화
-                    formRef.current = {}; // formRef 초기화 (선택적)
-                    // try {
-                    //     const response = await fetch('/address', { 
-                    //         method: 'POST',
-                    //         headers: {
-                    //             'Content-Type': 'application/json',
-                    //         },
-                    //         body: JSON.stringify(formData),
-                    //     });
-            
-                    //     if (!response.ok) {
-                    //         const errorData = await response.json(); // Try to parse error response
-                    //         throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || response.statusText}`);
-                    //     }
-            
-                    //     const result = await response.json();
-                    //     console.log('저장 완료', result);
-                    //     setFormData({});
-                    //     alert('저장 완료');
-                    // } catch (error) {
-                    //     console.error('Error sending data:', error); 
-                    //     alert('저장 실패');
-                    // }
-                },
-                onCancel: () => {
-                    setShowFormDataModal(false); // 모달 닫기
-                },
-            });
+            setInputValues({}); //초기화
+            formRef.current = {}; // formRef 초기화 (선택적)
         };
 
         const handleUpdate = () => {
+            // const selectedRows = table.getSelectedRowModel().flatRows;
+
+            // if (selectedRows.length === 0) {
+            //     return modals.open({
+            //         title: <Text fw={700}>선택 알림</Text>,
+            //         children: (
+            //             <Text fw={500} c="dimmed" ta="center">선택 된 데이터가 없습니다. 데이터를 선택 해 주세요.</Text>
+            //         ),
+            //     });
+            // }
+
             table.getSelectedRowModel().flatRows.map((row) => {
                 const formData = Object.keys(formRef.current).reduce((acc, key) => {
                     acc[key] = formRef.current[key];
                     return acc;
                 }, {});
 
+                const hasFormData = Object.values(formData).some(value => value !== "" && value !== null && value !== undefined);
+
+                if (!hasFormData) {
+                    return modals.open({
+                        title: <Text fw={700}>입력 알림</Text>,
+                        children: (
+                            <Text fw={500} c="dimmed" ta="center">입력된 값이 없습니다. 값을 입력 해 주세요.</Text>
+                        ),
+                    });
+                }
+
                 setModalFormData(formData); // 모달에 표시할 formData 설정
 
                 modals.openConfirmModal({
-                    title: <Text fw={700}>수정 알림</Text>,
-                    children: <Text fw={500} c="dimmed" ta="center">해당 {row.getValue('firstName')} 데이터를 수정하시겠습니까?</Text>,
+                    title: <Text fw={700}>저장 알림</Text>,
+                    children: <Text fw={500} c="dimmed" ta="center">해당 데이터를 저장하시겠습니까?</Text>,
                     labels: {
-                        confirm: "수정",
+                        confirm: "저장",
                         cancel: "취소",
                     },
-                    confirmProps: { color: "yellow" },
+                    confirmProps: { color: "blue" },
                     onConfirm: () => {
                         setShowFormDataModal(true);
                         // console.log(table.getSelectedRowModel().flatRows[0].original)
-                        setInputValues({}); //초기화
-                        formRef.current = {}; // formRef 초기화 (선택적)       
+                         // try {
+                        //     const response = await fetch('/address', { 
+                        //         method: 'POST',
+                        //         headers: {
+                        //             'Content-Type': 'application/json',
+                        //         },
+                        //         body: JSON.stringify(formData),
+                        //     });
+                
+                        //     if (!response.ok) {
+                        //         const errorData = await response.json(); // Try to parse error response
+                        //         throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || response.statusText}`);
+                        //     }
+                
+                        //     const result = await response.json();
+                        //     setTableData(result);
+                        //     console.log('저장 완료', result);
+                        //     setFormData({});
+                        //     alert('저장 완료');
+                        // } catch (error) {
+                        //     console.error('Error sending data:', error); 
+                        //     alert('저장 실패');
+                        // }      
                     },
                     onCancel: () => {
                         setShowFormDataModal(false); // 모달 닫기
@@ -386,6 +485,17 @@ const table = useMantineReactTable({
         };
 
         const handleDelete = () => {
+            const selectedRows = table.getSelectedRowModel().flatRows;
+
+            if (selectedRows.length === 0) {
+                return modals.open({
+                    title: <Text fw={700}>선택 알림</Text>,
+                    children: (
+                        <Text fw={500} c="dimmed" ta="center">선택 된 데이터가 없습니다. 데이터를 선택 해 주세요.</Text>
+                    ),
+                });
+            }
+            
             table.getSelectedRowModel().flatRows.map((row) => {
                 modals.openConfirmModal({
                     title: <Text fw={700}>삭제 알림</Text>,
@@ -393,24 +503,69 @@ const table = useMantineReactTable({
                     <Text fw={600} c="dimmed" ta="center">* 삭제주의 *</Text>
                     <Text fw={500} c="dimmed" ta="center">기준 정보 삭제 시 데이터가 누락 될 수 있으니,</Text>
                     <Text fw={500} c="dimmed" ta="center">사용여부 = N 처리를 권장합니다. </Text>
-                    <Text fw={500} c="dimmed" ta="center">해당 {row.getValue('firstName')} 데이터를 삭제하시겠습니까?</Text></>,
+                    <Text fw={500} c="dimmed" ta="center">해당 {row.getValue('keyV')} 데이터를 삭제하시겠습니까?</Text></>,
                     labels: {
                         confirm: "삭제",
                         cancel: "취소",
                     },
                     confirmProps: { color: "red" },
                     onConfirm: () => {
-                        alert('activating ' + row.getValue('firstName'));
+                        alert('activating ' + row.getValue('keyV'));
                         setInputValues({}); //초기화
                         formRef.current = {}; // formRef 초기화 (선택적)   
+                        // setSelectedRowId(null);
+                        // setRowSelection({});
                     },
                 });
             });
         };
 
         return (
-            <>
-                <Flex p="md" justify="space-between">
+            <div style={{marginBottom: headerHeight + 200}}>
+            <AppShell
+                navbar={{
+                    width: 200,
+                    breakpoint: "sm",
+                }}
+                header={{
+                    height: "auto",
+                }}
+                padding="md"
+            >
+                <AppShell.Header
+                    m="65px 0px 0px 200px"
+                >
+                    <Flex p="md" justify="space-between">
+                    <Flex style={{ gap: '8px' }}>
+                        {showAddBtn && (
+                            <Button
+                            color="yellow"
+                            // variant="light"
+                            onClick={handleCreate}
+                            >
+                            신규
+                            </Button>
+                        )}
+                        {showModBtn && (
+                            <Button
+                            // disabled={!table.getIsSomeRowsSelected()}
+                            // variant="light"
+                            onClick={handleUpdate}
+                            >
+                            저장
+                            </Button>
+                        )}
+                        {showDelBtn && (
+                            <Button
+                            color="red"
+                            // disabled={!table.getIsSomeRowsSelected()}
+                            // variant="light"
+                            onClick={handleDelete}
+                            >
+                            삭제
+                            </Button>
+                        )}
+                    </Flex>
                     <Flex gap="xs">
                         {showGlobalFilter && (
                             <MRT_GlobalFilterTextInput table={table} />
@@ -419,37 +574,6 @@ const table = useMantineReactTable({
                             <MRT_ToggleFiltersButton table={table} />
                         )}
                         
-                    </Flex>
-                    <Flex style={{ gap: '8px' }}>
-                        {showAddBtn && (
-                            <Button
-                                type="submit"
-                                variant="light"
-                                onClick={handleCreate}
-                            >
-                            저장
-                            </Button>
-                        )}
-                        {showModBtn && (
-                            <Button
-                            color="yellow"
-                            disabled={!table.getIsSomeRowsSelected()}
-                            variant="light"
-                            onClick={handleUpdate}
-                            >
-                            수정
-                            </Button>
-                        )}
-                        {showDelBtn && (
-                            <Button
-                            color="red"
-                            disabled={!table.getIsSomeRowsSelected()}
-                            variant="light"
-                            onClick={handleDelete}
-                            >
-                            삭제
-                            </Button>
-                        )}
                     </Flex>
                 </Flex>
                 <Container my="md">
@@ -463,6 +587,60 @@ const table = useMantineReactTable({
                         ))}
                     </Grid>
                 </Container>
+                </AppShell.Header>
+            </AppShell>
+                {/* <Flex p="md" justify="space-between">
+                    <Flex style={{ gap: '8px' }}>
+                        {showAddBtn && (
+                            <Button
+                                variant="light"
+                                onClick={handleCreate}
+                            >
+                            신규
+                            </Button>
+                        )}
+                        {showModBtn && (
+                            <Button
+                            color="yellow"
+                            disabled={!table.getIsSomeRowsSelected()}
+                            variant="light"
+                            onClick={handleUpdate}
+                            >
+                            저장
+                            </Button>
+                        )}
+                        {showDelBtn && (
+                            <Button
+                            color="red"
+                            disabled={!table.getIsSomeRowsSelected()}
+                            variant="light"
+                            onClick={handleDelete}
+                            >
+                            삭제
+                            </Button>
+                        )}
+                    </Flex>
+                    <Flex gap="xs">
+                        {showGlobalFilter && (
+                            <MRT_GlobalFilterTextInput table={table} />
+                        )}
+                        {showToggleFilter && (
+                            <MRT_ToggleFiltersButton table={table} />
+                        )}
+                        
+                    </Flex>
+                </Flex>
+                <Container my="md">
+                    <Grid p="md" style={{backgroundColor: 'rgb(244,244,244,0.1)', borderRadius: '10px'}}>
+                        {props.columns.map((column) => (
+                            <Input 
+                                column={column} 
+                                key={column.accessorKey}
+                                value={inputValues[column.accessorKey]}
+                                onChange={handleInputChange}/> // Input 컴포넌트 사용
+                        ))}
+                    </Grid>
+                </Container> */}
                 <Modal
                     opened={showFormDataModal}
                     onClose={() => setShowFormDataModal(false)}
@@ -471,12 +649,16 @@ const table = useMantineReactTable({
                 >
                     <pre>{JSON.stringify(modalFormData, null, 2)}</pre> 
                 </Modal>
-            </>
+            </div>
             );
         },
 });
 
-return <MantineReactTable table={table} />;
+return (
+    <div style={{width: '100%', overflowX: 'auto', tableLayout: 'fixed'}}>
+        <MantineReactTable table={table}/>
+    </div>
+    );
 };
 
 export default Example;

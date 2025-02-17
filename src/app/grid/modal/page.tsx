@@ -11,16 +11,16 @@ import classes from '../../css/HeaderMenu.module.css';
 // import CustomModal from './components/modal'; // 모달 컴포넌트 import
 import { data, usStates } from '../../components/basicdata';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
+import { nanoid } from 'nanoid';
 
 const columnsConfig = [ // 컬럼 설정을 page.js에 정의
   {
-    accessorKey: 'firstName',
-    header: 'First Name',
+    accessorKey: 'keyV',
+    header: 'Key',
     size: 200,
     filterVariant: 'autocomplete',
-    // inputType: 'text',
-    enableEditing: false,
+    inputType: 'text',
+    // enableEditing: false,
     xs: 4, // Grid.Col span 값 추가
   },
   {
@@ -28,7 +28,28 @@ const columnsConfig = [ // 컬럼 설정을 page.js에 정의
     header: 'Last Name',
     size: 200,
     filterVariant: 'text', // 텍스트 필터 사용
-    // inputType: 'text',
+    inputType: 'modal',
+    data: data,
+    column: [
+      {
+        accessorKey: 'keyV',
+        header: 'Key',
+        size: 200,
+        filterVariant: 'autocomplete',
+        inputType: 'text',
+        // enableEditing: false,
+        xs: 4, // Grid.Col span 값 추가
+      },
+      {
+        accessorKey: 'lastName',
+        header: 'Last Name',
+        size: 200,
+        filterVariant: 'autocomplete',
+        inputType: 'text',
+        // enableEditing: false,
+        xs: 4, // Grid.Col span 값 추가
+      },
+    ],
     xs: 4,
   },
   {
@@ -38,6 +59,7 @@ const columnsConfig = [ // 컬럼 설정을 page.js에 정의
     size: 150,
     filterVariant: 'autocomplete',
     inputType: 'select',
+    defaultValue: '',
     options: usStates,
     xs: 4, // Grid.Col span 값 추가
   },
@@ -53,7 +75,8 @@ const columnsConfig = [ // 컬럼 설정을 page.js에 정의
     // minimumFractionDigits: 2, // 소수점 최소 2자리
     // maximumFractionDigits: 2, // 소수점 최대 2자리
     inputType: 'range', // number range
-    // useRangebox: true,
+    useRangebox: false,
+    rangeArr: [50_000, 75_000],
     xs: 4,
   },
   {
