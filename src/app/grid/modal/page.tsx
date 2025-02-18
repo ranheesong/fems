@@ -1,17 +1,14 @@
 'use client'
 import * as React from 'react'
 // import { useState } from 'react';
-import Example from '../../components/basicTablel'
+import Example from '../../components/freeFormTable'
 import { MantineProvider, 
   Group,
   Box,
   // createTheme, 
   } from '@mantine/core';
-import classes from '../../css/HeaderMenu.module.css';
-// import CustomModal from './components/modal'; // 모달 컴포넌트 import
 import { data, usStates } from '../../components/basicdata';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { nanoid } from 'nanoid';
 
 const columnsConfig = [ // 컬럼 설정을 page.js에 정의
   {
@@ -38,7 +35,6 @@ const columnsConfig = [ // 컬럼 설정을 page.js에 정의
         filterVariant: 'autocomplete',
         inputType: 'text',
         // enableEditing: false,
-        xs: 4, // Grid.Col span 값 추가
       },
       {
         accessorKey: 'lastName',
@@ -47,7 +43,6 @@ const columnsConfig = [ // 컬럼 설정을 page.js에 정의
         filterVariant: 'autocomplete',
         inputType: 'text',
         // enableEditing: false,
-        xs: 4, // Grid.Col span 값 추가
       },
     ],
     xs: 4,

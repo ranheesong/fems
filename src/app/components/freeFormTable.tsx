@@ -1,7 +1,3 @@
-{/*진행중
--input modal창 선택 후_값
-*/}
-
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css'; 
 import 'mantine-react-table/styles.css';
@@ -10,23 +6,18 @@ import {
   MantineReactTable,
   useMantineReactTable,
 //   type MRT_RowSelectionState,
-  type MRT_ColumnDef,
   MRT_GlobalFilterTextInput,
   MRT_ToggleFiltersButton,
   MRT_RowSelectionState,
 } from 'mantine-react-table';
-import { Box, Button, Checkbox, Flex, Container, Grid, NumberInput, TextInput, Select, Text, Modal, AppShell, AppShellHeader, useMantineTheme, ActionIcon, Table} from '@mantine/core';
+import { Box, Button, Checkbox, Flex, Container, Grid, NumberInput, TextInput, Select, Text, Modal, AppShell, AppShellHeader, useMantineTheme, ActionIcon, Table, Center} from '@mantine/core';
 import { data, usStates } from './basicdata';
 import { DatePickerInput, DatesProvider } from '@mantine/dates';
 import { IconCalendar, IconSearch } from '@tabler/icons-react';
 import { ModalsProvider, modals } from "@mantine/modals";
-import { nanoid } from 'nanoid';
-import ActionToggle from './actionToggle';
-import { useMRT_EditCell } from '../hooks/useMRT_EditCell';
 import MRT_InlineTable from './inline/MR_InlineTable';
 
-const Input = ({ column, value, onChange, props}) =>  {
-    const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
+const Input = ({ column, value, onChange, props}) =>  { //freeForm 자동 생성 코드
 
     const handleChange = (event) => {
         onChange(column.accessorKey, event.currentTarget.value);
@@ -127,21 +118,27 @@ const Input = ({ column, value, onChange, props}) =>  {
         );
     case 'modal':
         return (
-            <Grid.Col span={{ base: 12, xs: column.xs }}>
-                <Flex gap={2} align={"flex-end"}>
-                    <ActionIcon
-                        mb={5}
+            <Grid.Col span={{ base: 12, xs: column.xs }}> 
+                    <TextInput
+                    label={column.header}
+                    name={column.accessorKey}
+                    required={column.required}
+                    disabled={column.enableEditing === false}
+                    placeholder={column.enableEditing === false? 'autocomplete' : 'input Text value'}
+                    value={displayValue}
+                    leftSection={
+                        <ActionIcon
                         variant="transparent"
                         onClick={() => {
                             modals.open({
-                                title: `모달`,
+                                title: <Text fw={700}>{column.header} 모달</Text>,
                                 size: "1000px",
                                 children: (
                                     <MRT_InlineTable
                                         columns={column.column}
                                         data={column.data}
                                         mantineTableBodyRowProps={({ row }) => (
-                                            {onDoubleClick: (e) => {
+                                            {onDoubleClick: () => {
                                                 onChange(column.accessorKey, row.original[column.accessorKey]);
                                                 modals.closeAll();
                                             },
@@ -156,14 +153,7 @@ const Input = ({ column, value, onChange, props}) =>  {
                     >
                         <IconSearch color="#868e96" />
                     </ActionIcon>
-                    <TextInput
-                    label={column.header}
-                    name={column.accessorKey}
-                    required={column.required}
-                    disabled={column.enableEditing === false}
-                    placeholder={column.enableEditing === false? 'autocomplete' : 'input Text value'}
-                    value={displayValue}
-                    // onChange={handleChange}
+                    }
                     onChange={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -171,7 +161,6 @@ const Input = ({ column, value, onChange, props}) =>  {
                     style={{width: '100%'}}
                     readOnly
                 />
-            </Flex>
             </Grid.Col>
         );
     default:
@@ -221,9 +210,7 @@ const Example = (props) => {
     // const [tableData, setTableData] = useState(data); //저장/수정 후 리로드
     // const [selectedRowId, setSelectedRowId] = useState<string | null>(null) //리로드 -> 해당 row 선택되게
 
-    const [alert, setAlert] = useState({ type: null, message: null });
-
-    const handleInputChange = (key, value) => { // useCallback 제거
+    const handleInputChange = (key, value) => {
         formRef.current[key] = value; // formRef 업데이트
         setInputValues({
             ...inputValues,
@@ -231,7 +218,7 @@ const Example = (props) => {
         });
     };
 
-    const generateColumns = () => {  // 함수로 분리
+    const generateColumns = () => {  //table column 자동 생성 함수 코드
         return props.columns.map((config) => {
             const column = {
                 accessorKey: config.accessorKey,
@@ -375,24 +362,13 @@ const table = useMantineReactTable({
     mantineTableBodyRowProps: ({ row }) => ({
         // onClick: row.getToggleSelectedHandler(),
         onClick: () => {
-            // const newRowSelection = { ...rowSelection };
-            // if (newRowSelection[row.id]) {
-            //     delete newRowSelection[row.id];
-            //     setInputValues({});
-            //     formRef.current = {};
-            // } else {
-            // newRowSelection[row.id] = true;
-            // formRef.current = row.original;
-            // setInputValues(row.original);
-            // }
-            // setRowSelection(newRowSelection);
-            // setSelectedRowId(row.id);
             setRowSelection({
                 [row.id]: !rowSelection[row.id],
             });
             if (!rowSelection[row.id]) { 
-                formRef.current = row.original;
-                setInputValues(row.original);
+                const copiedRowData = JSON.parse(JSON.stringify(row.original));
+                formRef.current = copiedRowData;
+                setInputValues(copiedRowData);
             } else {
                 setInputValues({}); // inputValues 초기화
                 formRef.current = {}; // formRef 초기화
@@ -406,22 +382,12 @@ const table = useMantineReactTable({
     },
     onRowSelectionChange: setRowSelection,
     renderTopToolbar: ({ table }) => { //renderTopToolbarCustomActions
-        const handleCreate = async (props) => {
+        const handleCreate = () => {
             setInputValues({}); //초기화
             formRef.current = {}; // formRef 초기화 (선택적)
         };
 
         const handleUpdate = () => {
-            // const selectedRows = table.getSelectedRowModel().flatRows;
-
-            // if (selectedRows.length === 0) {
-            //     return modals.open({
-            //         title: <Text fw={700}>선택 알림</Text>,
-            //         children: (
-            //             <Text fw={500} c="dimmed" ta="center">선택 된 데이터가 없습니다. 데이터를 선택 해 주세요.</Text>
-            //         ),
-            //     });
-            // }
 
             table.getSelectedRowModel().flatRows.map((row) => {
                 const formData = Object.keys(formRef.current).reduce((acc, key) => {
@@ -510,7 +476,12 @@ const table = useMantineReactTable({
                     },
                     confirmProps: { color: "red" },
                     onConfirm: () => {
-                        alert('activating ' + row.getValue('keyV'));
+                        modals.open({
+                            title: <Text fw={700}>삭제 알림</Text>,
+                            children: (
+                                <Text fw={500} c="dimmed" ta="center">{row.getValue('keyV')} 데이터를 삭제 하었습니다</Text>
+                            ),
+                        });
                         setInputValues({}); //초기화
                         formRef.current = {}; // formRef 초기화 (선택적)   
                         // setSelectedRowId(null);
@@ -577,7 +548,7 @@ const table = useMantineReactTable({
                     </Flex>
                 </Flex>
                 <Container my="md">
-                    <Grid p="md" style={{backgroundColor: 'rgb(244,244,244,0.1)', borderRadius: '10px'}}>
+                    <Grid m={"md"} p="md" style={{backgroundColor: 'rgb(244,244,244,0.1)', borderRadius: '10px'}}>
                         {props.columns.map((column) => (
                             <Input 
                                 column={column} 
@@ -589,58 +560,6 @@ const table = useMantineReactTable({
                 </Container>
                 </AppShell.Header>
             </AppShell>
-                {/* <Flex p="md" justify="space-between">
-                    <Flex style={{ gap: '8px' }}>
-                        {showAddBtn && (
-                            <Button
-                                variant="light"
-                                onClick={handleCreate}
-                            >
-                            신규
-                            </Button>
-                        )}
-                        {showModBtn && (
-                            <Button
-                            color="yellow"
-                            disabled={!table.getIsSomeRowsSelected()}
-                            variant="light"
-                            onClick={handleUpdate}
-                            >
-                            저장
-                            </Button>
-                        )}
-                        {showDelBtn && (
-                            <Button
-                            color="red"
-                            disabled={!table.getIsSomeRowsSelected()}
-                            variant="light"
-                            onClick={handleDelete}
-                            >
-                            삭제
-                            </Button>
-                        )}
-                    </Flex>
-                    <Flex gap="xs">
-                        {showGlobalFilter && (
-                            <MRT_GlobalFilterTextInput table={table} />
-                        )}
-                        {showToggleFilter && (
-                            <MRT_ToggleFiltersButton table={table} />
-                        )}
-                        
-                    </Flex>
-                </Flex>
-                <Container my="md">
-                    <Grid p="md" style={{backgroundColor: 'rgb(244,244,244,0.1)', borderRadius: '10px'}}>
-                        {props.columns.map((column) => (
-                            <Input 
-                                column={column} 
-                                key={column.accessorKey}
-                                value={inputValues[column.accessorKey]}
-                                onChange={handleInputChange}/> // Input 컴포넌트 사용
-                        ))}
-                    </Grid>
-                </Container> */}
                 <Modal
                     opened={showFormDataModal}
                     onClose={() => setShowFormDataModal(false)}
