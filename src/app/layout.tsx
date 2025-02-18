@@ -1,6 +1,13 @@
 "use client";
 
 import "@mantine/core/styles.css";
+import "react-datetime-picker/dist/DateTimePicker.css";
+import "react-calendar/dist/Calendar.css";
+import "react-clock/dist/Clock.css";
+
+import "@mantine/core/styles.css";
+import "@mantine/dates/styles.css";
+import "mantine-react-table/styles.css";
 import {
     ColorSchemeScript,
     Flex,

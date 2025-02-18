@@ -10,12 +10,13 @@ import {
     TreeNodeData,
 } from "@mantine/core";
 import { IconChevronDown } from "@tabler/icons-react";
-import { MRT_PaginationState } from "mantine-react-table";
+import { MRT_PaginationState, MRT_RowData } from "mantine-react-table";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import MRT_InlineTable from "./components/inline/MR_InlineTable";
+import MRT_InlineTable from "./components/inline/MRT_InlineTable";
 import useQueryCustom from "./hooks/useQueryCustom";
 import useMutationCustom from "./hooks/useMutationCustom";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 // FIXME: 테스트용
 const mapToTree = (data: Record<string, any>[]) => {
@@ -60,7 +61,7 @@ function TreeCustom({
         <Tree
             style={{
                 width: "20%",
-                height: "870px",
+                maxHeight: "815px",
                 overflow: "scroll",
             }}
             data={data}
@@ -99,6 +100,7 @@ function TreeCustom({
 }
 
 export default function Home() {
+    const queryClient = useQueryClient();
     const [activeCode, setActiveCode] = useState<string>("");
     const [pagination, setPagination] = useState<MRT_PaginationState>({
         pageIndex: 0,
@@ -139,6 +141,8 @@ export default function Home() {
         staleTime: 10_000,
     });
 
+    console.log({ codeResult });
+
     const { mutateAsync: createRow, isPending: isCreatingRow } =
         useMutationCustom("/common/code/info-insert", queryKey, {
             method: "POST",
@@ -167,11 +171,9 @@ export default function Home() {
                     handleActive={setActiveCode}
                 />
             )}
-            <div style={{ flexGrow: 1 }}>
+            <div style={{ width: "80%" }}>
                 <MRT_InlineTable
-                    rowCount={
-                        isSuccessCode ? codeResult.data.recordsFiltered : 0
-                    }
+                    rowCount={codeResult ? codeResult.data.recordsFiltered : 0}
                     manualPagination={true}
                     onPaginationChange={setPagination}
                     state={{
@@ -181,7 +183,7 @@ export default function Home() {
                         showProgressBars: isFetchingCode,
                         pagination,
                     }}
-                    refetch={refetch}
+                    refetch={() => queryClient.invalidateQueries({ queryKey })}
                     columns={[
                         {
                             accessorKey: "Datalake_Seq_No",
@@ -238,7 +240,7 @@ export default function Home() {
                             },
                         },
                     ]}
-                    data={isSuccessCode ? codeResult.data.data : []}
+                    data={codeResult ? codeResult.data.data : []}
                     enableCreate
                     enableEdit
                     enableDelete
@@ -281,6 +283,9 @@ export default function Home() {
                             }
                             toast.success(json.message);
                         });
+                    }}
+                    mantineTableContainerProps={{
+                        style: { maxHeight: "600px" }, //give the table a max height
                     }}
                 />
             </div>

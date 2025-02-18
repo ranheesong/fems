@@ -9,7 +9,8 @@ import { useState } from "react";
 import {
     getValue,
     MRT_InlineColumnDef,
-} from "../components/inline/MR_InlineTable";
+} from "../components/inline/MRT_InlineTable";
+import dayjs from "dayjs";
 
 function formatDate(date) {
     const d = new Date(date);
@@ -52,6 +53,8 @@ export function useMRT_EditCell<TData extends MRT_RowData>(
         else if (e.target == null) newValue = e;
         else newValue = e.target.value;
 
+        console.log({ newValue });
+
         const editProps = columnDef.editProps;
         switch (editProps.type) {
             case "checkbox":
@@ -59,7 +62,10 @@ export function useMRT_EditCell<TData extends MRT_RowData>(
                     editProps.data[e.target.checked ? "checked" : "unchecked"];
                 break;
             case "date":
-                newValue = newValue != "" ? formatDate(newValue) : "";
+                newValue =
+                    newValue != ""
+                        ? dayjs(newValue).format("YYYY-MM-DD HH:mm:ss")
+                        : "";
                 break;
             case "modal":
                 break;
@@ -68,32 +74,17 @@ export function useMRT_EditCell<TData extends MRT_RowData>(
                 break;
         }
         setValue(newValue);
+
+        //@ts-ignore
+        row._valuesCache[column.id] = newValue;
+        if (editProps.type != "text") setEditingRow(row);
     };
 
     const handleBlur = (e) => {
-        let newValue;
-        if (e == null) newValue = "";
-        else if (e.target == null) newValue = e;
-        else newValue = e.target.value;
-
-        const editProps = columnDef.editProps;
-        switch (editProps.type) {
-            case "checkbox":
-                newValue =
-                    editProps.data[e.target.checked ? "checked" : "unchecked"];
-                break;
-            case "date":
-                newValue = newValue != "" ? formatDate(newValue) : "";
-                break;
-            case "modal":
-                break;
-
-            default:
-                break;
+        if (table.options.editDisplayMode == "table") {
+            setEditingRow(row);
+            console.log({ row });
         }
-        //@ts-ignore
-        row._valuesCache[column.id] = newValue;
-        setEditingRow(row);
     };
     return { value, handleOnChange, handleBlur };
 }
