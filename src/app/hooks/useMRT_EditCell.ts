@@ -1,90 +1,68 @@
-import {
-    MRT_Cell,
-    MRT_Column,
-    MRT_Row,
-    MRT_RowData,
-    MRT_TableInstance,
-} from "mantine-react-table";
-import { useState } from "react";
-import {
-    getValue,
-    MRT_InlineColumnDef,
-} from "../components/inline/MRT_InlineTable";
-import dayjs from "dayjs";
-
-function formatDate(date) {
-    const d = new Date(date);
-
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0"); // 월은 0부터 시작하므로 +1
-    const day = String(d.getDate()).padStart(2, "0");
-    const hours = d.getHours(); // 24시간 형식
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-    const seconds = String(d.getSeconds()).padStart(2, "0");
-
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
+import { MRT_Cell, MRT_Column, MRT_Row, MRT_RowData, MRT_TableInstance } from 'mantine-react-table'
+import { useEffect, useState } from 'react'
+import { getValue, MRT_ColumnDefExtend } from '@/app/components/MRT_Table'
+import dayjs from 'dayjs'
 
 export type MantineTableCellProps<TData extends MRT_RowData> = {
-    cell: MRT_Cell<TData>;
-    column: MRT_Column<TData>;
-    row: MRT_Row<TData>;
-    table: MRT_TableInstance<TData>;
-};
+  cell: MRT_Cell<TData>
+  column: MRT_Column<TData>
+  row: MRT_Row<TData>
+  table: MRT_TableInstance<TData>
+}
 
-export function useMRT_EditCell<TData extends MRT_RowData>(
-    props: MantineTableCellProps<TData>
-) {
-    const { cell, column, row, table } = props;
+export function useMRT_EditCell<TData extends MRT_RowData>(props: MantineTableCellProps<TData>) {
+  const { cell, column, row, table } = props
 
-    const { getState, setEditingCell, setEditingRow, setCreatingRow } = table;
-    const { editingRow, creatingRow } = getState();
+  const { getState, setEditingCell, setEditingRow, setCreatingRow } = table
+  const { editingRow, creatingRow } = getState()
 
-    const [value, setValue] = useState(getValue(cell));
+  const cellValue = getValue(cell)
+  const [value, setValue] = useState(cellValue)
 
-    const isCreating = creatingRow?.id === row.id;
-    const isEditing = editingRow?.id === row.id;
+  // 테이블 데이터 최신화할 경우 state 값 초기화
+  useEffect(() => {
+    setValue(cellValue)
+  }, [cell, cellValue])
 
-    const columnDef = column.columnDef as MRT_InlineColumnDef;
+  const isCreating = creatingRow?.id === row.id
+  const isEditing = editingRow?.id === row.id
 
-    const handleOnChange = (e) => {
-        let newValue;
-        if (e == null) newValue = "";
-        else if (e.target == null) newValue = e;
-        else newValue = e.target.value;
+  const columnDef = column.columnDef as MRT_ColumnDefExtend
 
-        console.log({ newValue });
+  const handleOnChange = (e) => {
+    let newValue
+    if (e == null) newValue = ''
+    else if (e.target == null) newValue = e
+    else newValue = e.target.value
 
-        const editProps = columnDef.editProps;
-        switch (editProps.type) {
-            case "checkbox":
-                newValue =
-                    editProps.data[e.target.checked ? "checked" : "unchecked"];
-                break;
-            case "date":
-                newValue =
-                    newValue != ""
-                        ? dayjs(newValue).format("YYYY-MM-DD HH:mm:ss")
-                        : "";
-                break;
-            case "modal":
-                break;
+    console.log({ newValue })
 
-            default:
-                break;
-        }
-        setValue(newValue);
+    const editProps = columnDef.editProps
+    switch (editProps.type) {
+      case 'checkbox':
+        newValue = editProps.data[e.target.checked ? 'checked' : 'unchecked']
+        break
+      case 'date':
+        newValue = newValue != '' ? dayjs(newValue).format('YYYY-MM-DD HH:mm:ss') : ''
+        break
+      case 'modal':
+        break
 
-        //@ts-ignore
-        row._valuesCache[column.id] = newValue;
-        if (editProps.type != "text") setEditingRow(row);
-    };
+      default:
+        break
+    }
+    setValue(newValue)
 
-    const handleBlur = (e) => {
-        if (table.options.editDisplayMode == "table") {
-            setEditingRow(row);
-            console.log({ row });
-        }
-    };
-    return { value, handleOnChange, handleBlur };
+    //@ts-ignore
+    row._valuesCache[column.id] = newValue
+    if (editProps.type != 'text') setEditingRow(row)
+  }
+
+  const handleBlur = (e) => {
+    if (table.options.editDisplayMode == 'table') {
+      setEditingRow(row)
+      console.log({ row })
+    }
+  }
+  return { value, handleOnChange, handleBlur }
 }
